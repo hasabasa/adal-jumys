@@ -13,9 +13,9 @@ TRUST_LEVELS = ("user", "trusted", "moderator", "admin")
 class User(TimestampMixin, Base):
     __tablename__ = "users"
 
+    # Минимизация қағидасы: телефон да, аты-жөні де СҰРАЛМАЙДЫ - тек email
     id: Mapped[uuid.UUID] = uuid_pk()
     email: Mapped[str] = mapped_column(Text, unique=True)
-    phone: Mapped[str | None] = mapped_column(Text)
     password_hash: Mapped[str] = mapped_column(Text)
     # Жария профильде ТЕК псевдоним корінеді; email/phone ешқашан ашылмайды
     pseudonym: Mapped[str] = mapped_column(Text, unique=True)
