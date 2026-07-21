@@ -3,7 +3,8 @@ from sqlalchemy import or_, select
 
 from app.api.deps import CurrentUser, DbSession, VisibleCompany
 from app.models import Company
-from app.schemas.company import CompanyCreate, CompanyPublic
+from app.schemas.company import CompanyCreate, CompanyPublic, EmployerRatingPublic
+from app.services.rating import employer_rating
 
 router = APIRouter(prefix="/companies", tags=["companies"])
 
@@ -55,3 +56,11 @@ async def list_companies(
 @router.get("/{company_id}", response_model=CompanyPublic)
 async def get_company(company: VisibleCompany) -> Company:
     return company
+
+
+@router.get("/{company_id}/rating", response_model=EmployerRatingPublic)
+async def get_employer_rating(
+    company: VisibleCompany, db: DbSession
+) -> EmployerRatingPublic:
+    result = await employer_rating(db, company.id)
+    return EmployerRatingPublic.model_validate(result)

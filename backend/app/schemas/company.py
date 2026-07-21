@@ -22,6 +22,19 @@ class CompanyCreate(BaseModel):
         return v
 
 
+class EmployerRatingPublic(BaseModel):
+    """Жұмыс беруші осі. rating=None: отзыв әлі жоқ.
+
+    Формула ашық: docs/rating.md
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    rating: float | None
+    review_count: int
+    verified_count: int
+
+
 class CompanyPublic(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
