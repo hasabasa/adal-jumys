@@ -1,0 +1,21 @@
+# Орнату (бір рет): pre-commit install
+# Барлық файлды қолмен тексеру: pre-commit run --all-files
+repos:
+  - repo: local
+    hooks:
+      - id: gitleaks
+        name: gitleaks (құпия-скан)
+        description: Коммитке құпия (кілт, токен, пароль) кіріп кетуден қорғайды
+        entry: gitleaks git --pre-commit --staged --redact --verbose
+        language: system
+        pass_filenames: false
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: detect-private-key
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-merge-conflict
