@@ -1,6 +1,7 @@
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 
-from app.api.routes import auth, companies, complaints, reviews
+from app.api.routes import auth, companies, complaints, moderation, reviews
 
 app = FastAPI(
     title="Adal Jumys API",
@@ -12,6 +13,12 @@ app.include_router(auth.router)
 app.include_router(companies.router)
 app.include_router(reviews.router)
 app.include_router(complaints.router)
+app.include_router(moderation.router)
+
+
+@app.get("/", include_in_schema=False)
+async def root() -> RedirectResponse:
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health", tags=["service"])

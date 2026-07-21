@@ -34,6 +34,18 @@ async def get_current_user(
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
+async def get_current_moderator(user: CurrentUser) -> User:
+    if user.trust_level not in ("moderator", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Бұл әрекетке модератор құқығы керек",
+        )
+    return user
+
+
+CurrentModerator = Annotated[User, Depends(get_current_moderator)]
+
+
 async def get_visible_company(company_id: uuid.UUID, db: DbSession) -> Company:
     """Path-тағы company_id бойынша жасырылмаған компанияны табады."""
     company = await db.get(Company, company_id)
