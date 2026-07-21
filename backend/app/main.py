@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.routes import auth
+from app.api.routes import auth, companies, complaints, reviews
 
 app = FastAPI(
     title="Adal Jumys API",
@@ -9,6 +9,9 @@ app = FastAPI(
 )
 
 app.include_router(auth.router)
+app.include_router(companies.router)
+app.include_router(reviews.router)
+app.include_router(complaints.router)
 
 
 @app.get("/health", tags=["service"])

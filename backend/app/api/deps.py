@@ -1,3 +1,4 @@
+import uuid
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
@@ -6,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import decode_access_token
 from app.db.session import get_db
-from app.models import User
+from app.models import Company, User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -31,3 +32,16 @@ async def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+async def get_visible_company(company_id: uuid.UUID, db: DbSession) -> Company:
+    """Path-тағы company_id бойынша жасырылмаған компанияны табады."""
+    company = await db.get(Company, company_id)
+    if company is None or company.hidden_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Компания табылмады"
+        )
+    return company
+
+
+VisibleCompany = Annotated[Company, Depends(get_visible_company)]
