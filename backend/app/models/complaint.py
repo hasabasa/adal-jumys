@@ -20,7 +20,25 @@ COMPLAINT_CATEGORIES = (
 COMPLAINT_STAGES = ("announcement", "call", "interview", "offer")
 SOURCE_TYPES = ("hh", "olx", "instagram", "threads", "telegram", "whatsapp", "other")
 
-DISCRIMINATION_KINDS = ("language", "age", "gender", "ethnicity", "other")
+# Екі топ бір тізімде (docs/categories.md): белгі бойынша кемсіту + қысым/қорлау
+DISCRIMINATION_KINDS = (
+    # кемсіту (ЕК 6-бап, Конституция 14-бап)
+    "language",
+    "age",
+    "gender",
+    "ethnicity",
+    "religion",
+    "pregnancy",
+    "disability",
+    "appearance",
+    "other",
+    # қысым (әлеуметтік санаттар, АК 143 / ҚК аясы)
+    "bullying",
+    "dignity_abuse",
+    "sexual_harassment",
+    "threats",
+    "extortion",
+)
 DISCRIMINATION_FORMS = ("vacancy_text", "interview", "at_work")
 
 

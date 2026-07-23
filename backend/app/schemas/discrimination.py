@@ -2,7 +2,22 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-Kind = Literal["language", "age", "gender", "ethnicity", "other"]
+Kind = Literal[
+    "language",
+    "age",
+    "gender",
+    "ethnicity",
+    "religion",
+    "pregnancy",
+    "disability",
+    "appearance",
+    "other",
+    "bullying",
+    "dignity_abuse",
+    "sexual_harassment",
+    "threats",
+    "extortion",
+]
 Form = Literal["vacancy_text", "interview", "at_work"]
 
 

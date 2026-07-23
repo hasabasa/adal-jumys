@@ -16,7 +16,24 @@ export const EMPTY_DISCRIMINATION: DiscriminationValue = {
   description: "",
 };
 
-const KINDS = ["language", "age", "gender", "ethnicity", "other"];
+const DISCRIMINATION_KINDS = [
+  "language",
+  "age",
+  "gender",
+  "ethnicity",
+  "religion",
+  "pregnancy",
+  "disability",
+  "appearance",
+  "other",
+];
+const HARASSMENT_KINDS = [
+  "bullying",
+  "dignity_abuse",
+  "sexual_harassment",
+  "threats",
+  "extortion",
+];
 const FORMS = ["vacancy_text", "interview", "at_work"];
 
 export function DiscriminationField({
@@ -51,11 +68,20 @@ export function DiscriminationField({
             onChange={(event) => onChange({ ...value, kind: event.target.value })}
             className="h-10 rounded-lg border border-input bg-card px-2 text-sm"
           >
-            {KINDS.map((kind) => (
-              <option key={kind} value={kind}>
-                {t(`kinds.${kind}`)}
-              </option>
-            ))}
+            <optgroup label={t("groupDiscrimination")}>
+              {DISCRIMINATION_KINDS.map((kind) => (
+                <option key={kind} value={kind}>
+                  {t(`kinds.${kind}`)}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label={t("groupHarassment")}>
+              {HARASSMENT_KINDS.map((kind) => (
+                <option key={kind} value={kind}>
+                  {t(`kinds.${kind}`)}
+                </option>
+              ))}
+            </optgroup>
           </select>
           <select
             value={value.form}

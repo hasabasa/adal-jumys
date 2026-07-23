@@ -99,20 +99,31 @@
     "sourceUser": "қолданушы қосқан"
   },
   "discr": {
-    "toggle": "Кемсітушілік болды",
+    "toggle": "Кемсіту немесе қысым болды",
     "kinds": {
-      "language": "Тіл",
+      "language": "Тіл (қазақтілділерді кемсіту)",
       "age": "Жас",
       "gender": "Жыныс",
       "ethnicity": "Ұлт",
-      "other": "Басқа"
+      "religion": "Дін",
+      "pregnancy": "Жүктілік / декрет",
+      "disability": "Мүгедектік / денсаулық",
+      "appearance": "Сыртқы келбет",
+      "other": "Басқа белгі",
+      "bullying": "Буллинг / моббинг",
+      "dignity_abuse": "Ар-намысқа тию, қорлау",
+      "sexual_harassment": "Жыныстық сипаттағы қысым",
+      "threats": "Қорқыту",
+      "extortion": "Бопсалау / шантаж"
     },
     "forms": {
       "vacancy_text": "Вакансия мәтінінде",
       "interview": "Әңгімелесуде",
       "at_work": "Жұмыс барысында"
     },
-    "descriptionPlaceholder": "Қысқаша сипаттама (міндетті емес)"
+    "descriptionPlaceholder": "Қысқаша сипаттама (міндетті емес)",
+    "groupDiscrimination": "Белгі бойынша кемсіту",
+    "groupHarassment": "Қысым және қорлау"
   },
   "reviewForm": {
     "title": "Пікір қалдыру",

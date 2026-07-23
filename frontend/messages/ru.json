@@ -99,20 +99,31 @@
     "sourceUser": "добавлено пользователем"
   },
   "discr": {
-    "toggle": "Была дискриминация",
+    "toggle": "Была дискриминация или давление",
     "kinds": {
-      "language": "Язык",
+      "language": "Язык (дискриминация казахоязычных)",
       "age": "Возраст",
       "gender": "Пол",
       "ethnicity": "Национальность",
-      "other": "Другое"
+      "religion": "Религия",
+      "pregnancy": "Беременность / декрет",
+      "disability": "Инвалидность / здоровье",
+      "appearance": "Внешность",
+      "other": "Другой признак",
+      "bullying": "Буллинг / моббинг",
+      "dignity_abuse": "Оскорбление чести и достоинства",
+      "sexual_harassment": "Домогательства",
+      "threats": "Угрозы",
+      "extortion": "Вымогательство / шантаж"
     },
     "forms": {
       "vacancy_text": "В тексте вакансии",
       "interview": "На собеседовании",
       "at_work": "В процессе работы"
     },
-    "descriptionPlaceholder": "Краткое описание (необязательно)"
+    "descriptionPlaceholder": "Краткое описание (необязательно)",
+    "groupDiscrimination": "Дискриминация по признаку",
+    "groupHarassment": "Давление и унижение"
   },
   "reviewForm": {
     "title": "Оставить отзыв",

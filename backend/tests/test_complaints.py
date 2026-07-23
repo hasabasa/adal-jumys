@@ -72,6 +72,28 @@ def test_discrimination_category_requires_block(client, register, auth_header):
     assert with_block.status_code == 201
 
 
+def test_new_discrimination_and_harassment_kinds(client, register, auth_header):
+    """Кеңейтілген түрлер: жүктілік (кемсіту-тобы) мен бопсалау (қысым-тобы)."""
+    company_id, headers = _setup(client, register, auth_header)
+    response = client.post(
+        f"/companies/{company_id}/complaints",
+        json={
+            "category": "discrimination",
+            "stage": "interview",
+            "source_type": "whatsapp",
+            "body": REVIEW_BODY,
+            "discrimination": [
+                {"kind": "pregnancy", "form": "interview"},
+                {"kind": "extortion", "form": "at_work"},
+            ],
+        },
+        headers=headers,
+    )
+    assert response.status_code == 201
+    kinds = [d["kind"] for d in response.json()["discrimination"]]
+    assert kinds == ["pregnancy", "extortion"]
+
+
 def test_stats(client, register, auth_header):
     company_id, headers = _setup(client, register, auth_header)
     client.post(
