@@ -21,9 +21,30 @@ export default async function HomePage({
   ] as const;
 
   return (
-    <div className="mx-auto max-w-6xl px-4">
+    <div className="relative mx-auto max-w-6xl px-4">
+      {/* Атмосфера: hero артындағы жұмсақ teal-жарқыл мен нүкте-тор */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[480px]"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 50% at 50% 0%, oklch(0.52 0.1 195 / 0.14), transparent 70%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[480px] opacity-[0.35]"
+        style={{
+          backgroundImage:
+            "radial-gradient(oklch(0.52 0.1 195 / 0.25) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+          maskImage:
+            "linear-gradient(to bottom, black, transparent 85%)",
+        }}
+      />
+
       <section className="flex flex-col items-center py-20 text-center sm:py-28">
-        <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-balance sm:text-5xl">
+        <h1 className="font-display max-w-2xl text-3xl font-bold tracking-tight text-balance sm:text-5xl sm:leading-[1.15]">
           {t("title")}
         </h1>
         <p className="mt-4 max-w-xl text-muted-foreground text-balance">
@@ -48,7 +69,7 @@ export default async function HomePage({
         <dl className="mt-10 flex gap-10">
           {statEntries.map((stat) => (
             <div key={stat.key} className="text-center">
-              <dt className="text-2xl font-bold text-primary">
+              <dt className="font-display text-2xl font-bold text-primary">
                 <StatCounter value={stat.value} />
               </dt>
               <dd className="text-xs text-muted-foreground">{t(stat.key)}</dd>

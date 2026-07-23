@@ -15,9 +15,12 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4">
-        <Link href="/" className="flex items-center gap-1.5 font-semibold">
-          <span className="size-2.5 rounded-full bg-primary" aria-hidden />
-          Adal Jumys
+        <Link
+          href="/"
+          className="font-display flex items-center gap-1.5 text-sm font-bold tracking-tight lowercase"
+        >
+          adal jumys
+          <span className="size-2 rounded-full bg-primary" aria-hidden />
         </Link>
 
         <nav className="hidden items-center gap-5 text-sm text-muted-foreground sm:flex">

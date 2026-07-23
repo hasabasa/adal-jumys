@@ -88,7 +88,15 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-golos);
+  --font-display: var(--font-golos);
+}
+
+/* Display-мәнер: сол шрифт, бірақ ауыр салмақ + тығыз tracking
+   (Glassdoor-үлгі: отбасы бір, иерархия салмақпен жасалады) */
+.font-display {
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 /* Анимацияны өшірген юзерге құрмет (accessibility) */

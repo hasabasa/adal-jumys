@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
-import { Inter } from "next/font/google";
+import { Golos_Text } from "next/font/google";
 import { notFound } from "next/navigation";
 
 import "../globals.css";
@@ -9,9 +9,11 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { routing } from "@/i18n/routing";
 
-// Inter: қазақ кириллицасын (ӘҒҚҢӨҰҮҺІ) толық қолдайды
-const inter = Inter({
-  variable: "--font-inter",
+// Golos Text: кириллица үшін арнайы сызылған - қазақ әріптері (ӘҒҚҢӨҰҮҺІ)
+// туған glyphs ретінде салынған. Glassdoor/kununu үлгісі: бір отбасы,
+// тақырыптар салмақ-контрастпен (800) ерекшеленеді
+const golos = Golos_Text({
+  variable: "--font-golos",
   subsets: ["latin", "cyrillic", "cyrillic-ext"],
 });
 
@@ -39,7 +41,7 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   return (
-    <html lang={locale} className={`${inter.variable} h-full antialiased`}>
+    <html lang={locale} className={`${golos.variable} h-full antialiased`}>
       <body className="flex min-h-screen flex-col font-sans">
         <NextIntlClientProvider>
           <SiteHeader />

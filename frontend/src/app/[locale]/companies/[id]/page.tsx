@@ -1,8 +1,12 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
+import { CommentsSection } from "@/components/comments/comments-section";
+import { Avatar } from "@/components/feed/avatar";
+import { ShareButton } from "@/components/feed/share-button";
 import { ModeratorTools } from "@/components/moderation/moderator-tools";
 import { Button } from "@/components/ui/button";
+import { relativeTime } from "@/lib/format";
 import { Link } from "@/i18n/navigation";
 import {
   evidenceUrl,
@@ -55,6 +59,28 @@ export default async function CompanyPage({
     getComplaints(id),
     getComplaintStats(id),
   ]);
+
+  // Бір хронологиялық лента: қызметкер мен кандидат сын-пікірлері аралас
+  const posts = [
+    ...reviews.map((review) => ({
+      kind: "review" as const,
+      created_at: review.created_at,
+      review,
+    })),
+    ...complaints.map((complaint) => ({
+      kind: "complaint" as const,
+      created_at: complaint.created_at,
+      complaint,
+    })),
+  ].sort((a, b) => b.created_at.localeCompare(a.created_at));
+
+  // Glassdoor-үлгі: баға-үлестірім гистограммасы (10-баллдық шкала 5 топқа)
+  const bucketLabels = ["9-10", "7-8", "5-6", "3-4", "1-2"];
+  const bucketCounts = [0, 0, 0, 0, 0];
+  for (const review of reviews) {
+    const index = Math.min(4, Math.floor((10 - review.overall_score) / 2));
+    bucketCounts[index] += 1;
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
@@ -117,7 +143,7 @@ export default async function CompanyPage({
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <div className="text-2xl font-bold text-primary">
+          <div className="font-display text-2xl font-bold text-primary">
             {rating.rating ?? "—"}
             <span className="text-sm font-normal text-muted-foreground">
               /10
@@ -140,7 +166,7 @@ export default async function CompanyPage({
         >
           <div
             className={cn(
-              "text-2xl font-bold",
+              "font-display text-2xl font-bold",
               badges.length >= 3
                 ? "text-destructive"
                 : badges.length > 0
@@ -156,19 +182,45 @@ export default async function CompanyPage({
         </div>
 
         <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <div className="text-2xl font-bold">{rating.review_count}</div>
+          <div className="font-display text-2xl font-bold">{rating.review_count}</div>
           <div className="mt-1 text-xs text-muted-foreground">
             {t("tiles.reviews", { verified: rating.verified_count })}
           </div>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <div className="text-2xl font-bold">{stats.total}</div>
+          <div className="font-display text-2xl font-bold">{stats.total}</div>
           <div className="mt-1 text-xs text-muted-foreground">
             {t("tiles.complaints")}
           </div>
         </div>
       </div>
+
+      {reviews.length > 0 && (
+        <section className="mt-4 rounded-xl border border-border bg-card p-4">
+          <h2 className="text-sm font-semibold">{t("distributionTitle")}</h2>
+          <div className="mt-3 grid gap-1.5">
+            {bucketLabels.map((label, index) => (
+              <div key={label} className="flex items-center gap-2 text-xs">
+                <span className="w-8 text-right text-muted-foreground">
+                  {label}
+                </span>
+                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{
+                      width: `${(bucketCounts[index] / reviews.length) * 100}%`,
+                    }}
+                  />
+                </div>
+                <span className="w-6 text-muted-foreground">
+                  {bucketCounts[index]}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {badges.length > 0 && (
         <section className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
@@ -197,34 +249,70 @@ export default async function CompanyPage({
         </p>
       </section>
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        <Button render={<Link href={`/companies/${id}/review`} />}>
-          {t("leaveReview")}
-        </Button>
-        <Button
-          variant="outline"
-          render={<Link href={`/companies/${id}/complain`} />}
-        >
-          {t("leaveComplaint")}
+      <div className="mt-6">
+        <Button size="lg" render={<Link href={`/companies/${id}/write`} />}>
+          {t("writeButton")}
         </Button>
       </div>
 
-      <section className="mt-10">
+      {stats.total > 0 && (
+        <section className="mt-6">
+          <h2 className="text-sm font-semibold">{t("candidateStatsTitle")}</h2>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {Object.entries(stats.by_category).map(([category, count]) => (
+              <span
+                key={category}
+                className="rounded-md bg-secondary px-2.5 py-1 text-xs"
+              >
+                {tFeed(`categories.${category}`)}: {count}
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="mt-10 pb-16">
         <h2 className="text-lg font-semibold">
-          {t("reviewsTitle", { count: reviews.length })}
+          {t("postsTitle", { count: reviews.length + complaints.length })}
         </h2>
-        {reviews.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">{t("noReviews")}</p>
+        {reviews.length + complaints.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">{t("noPosts")}</p>
         ) : (
           <div className="mt-4 grid gap-3">
-            {reviews.map((review) => (
+            {posts.map((post) =>
+              post.kind === "review" ? (
+                renderReview(post.review)
+              ) : (
+                renderComplaint(post.complaint)
+              ),
+            )}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+
+  function renderReview(review: (typeof reviews)[number]) {
+    return (
               <article
                 key={review.id}
                 className="rounded-xl border border-border bg-card p-4"
               >
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="text-base font-bold">
+                <div className="flex items-center gap-2.5">
+                  <Avatar name={review.author_pseudonym} />
+                  <p className="min-w-0 text-sm font-semibold">
+                    {review.author_pseudonym}
+                    <span className="ml-2 font-normal text-muted-foreground">
+                      {relativeTime(review.created_at, locale)}
+                    </span>
+                  </p>
+                  <span className="ml-auto text-base font-bold">
                     {review.overall_score}/10
+                  </span>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="rounded-md bg-accent px-2 py-0.5 font-medium text-accent-foreground">
+                    {t("originWorker")}
                   </span>
                   {review.verification_status === "verified" && (
                     <span className="rounded-md bg-success/10 px-2 py-0.5 font-medium text-success">
@@ -247,9 +335,6 @@ export default async function CompanyPage({
                       {tDiscr(`kinds.${block.kind}`)}
                     </span>
                   ))}
-                  <span className="ml-auto text-muted-foreground">
-                    {review.author_pseudonym}
-                  </span>
                 </div>
                 <p className="mt-2 text-sm">{review.body}</p>
                 <EvidenceLinks items={review.evidence} />
@@ -263,50 +348,44 @@ export default async function CompanyPage({
                     </p>
                   </div>
                 )}
+                <div className="mt-3 flex items-center gap-4 border-t border-border pt-2.5">
+                  <CommentsSection
+                    companyId={id}
+                    kind="reviews"
+                    postId={review.id}
+                  />
+                  <ShareButton companyId={id} />
+                </div>
                 <ModeratorTools targetKind="reviews" targetId={review.id} />
               </article>
-            ))}
-          </div>
-        )}
-      </section>
+    );
+  }
 
-      <section className="mt-10 pb-16">
-        <h2 className="text-lg font-semibold">
-          {t("complaintsTitle", { count: stats.total })}
-        </h2>
-        {stats.total > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {Object.entries(stats.by_category).map(([category, count]) => (
-              <span
-                key={category}
-                className="rounded-md bg-secondary px-2.5 py-1 text-xs"
-              >
-                {tFeed(`categories.${category}`)}: {count}
-              </span>
-            ))}
-          </div>
-        )}
-        {complaints.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">
-            {t("noComplaints")}
-          </p>
-        ) : (
-          <div className="mt-4 grid gap-3">
-            {complaints.map((complaint) => (
+  function renderComplaint(complaint: (typeof complaints)[number]) {
+    return (
               <article
                 key={complaint.id}
                 className="rounded-xl border border-border bg-card p-4"
               >
-                <div className="flex flex-wrap items-center gap-2 text-xs">
+                <div className="flex items-center gap-2.5">
+                  <Avatar name={complaint.author_pseudonym} />
+                  <p className="min-w-0 text-sm font-semibold">
+                    {complaint.author_pseudonym}
+                    <span className="ml-2 font-normal text-muted-foreground">
+                      {relativeTime(complaint.created_at, locale)}
+                    </span>
+                  </p>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="rounded-md bg-secondary px-2 py-0.5 font-medium">
+                    {t("originCandidate")}
+                  </span>
                   <span className="rounded-md bg-destructive/10 px-2 py-0.5 font-medium text-destructive">
                     {tFeed(`categories.${complaint.category}`)}
                   </span>
                   <span className="text-muted-foreground">
                     {t(`stages.${complaint.stage}`)} ·{" "}
                     {complaint.source_type}
-                  </span>
-                  <span className="ml-auto text-muted-foreground">
-                    {complaint.author_pseudonym}
                   </span>
                 </div>
                 {complaint.salary_diff_percent !== null && (
@@ -330,15 +409,19 @@ export default async function CompanyPage({
                     </p>
                   </div>
                 )}
+                <div className="mt-3 flex items-center gap-4 border-t border-border pt-2.5">
+                  <CommentsSection
+                    companyId={id}
+                    kind="complaints"
+                    postId={complaint.id}
+                  />
+                  <ShareButton companyId={id} />
+                </div>
                 <ModeratorTools
                   targetKind="complaints"
                   targetId={complaint.id}
                 />
               </article>
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
-  );
+    );
+  }
 }

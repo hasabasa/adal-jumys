@@ -4,27 +4,8 @@ import { Avatar } from "@/components/feed/avatar";
 import { ShareButton } from "@/components/feed/share-button";
 import { Link } from "@/i18n/navigation";
 import type { FeedItem } from "@/lib/api";
+import { formatTenge, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-
-function formatTenge(value: number, locale: string): string {
-  return new Intl.NumberFormat(locale === "kk" ? "kk-KZ" : "ru-KZ").format(value);
-}
-
-function relativeTime(iso: string, locale: string): string {
-  const seconds = (new Date(iso).getTime() - Date.now()) / 1000;
-  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
-  const table: [Intl.RelativeTimeFormatUnit, number][] = [
-    ["day", 86400],
-    ["hour", 3600],
-    ["minute", 60],
-  ];
-  for (const [unit, size] of table) {
-    if (Math.abs(seconds) >= size) {
-      return rtf.format(Math.round(seconds / size), unit);
-    }
-  }
-  return rtf.format(Math.round(seconds), "second");
-}
 
 export function FeedCard({ item }: Readonly<{ item: FeedItem }>) {
   const t = useTranslations("feed");
