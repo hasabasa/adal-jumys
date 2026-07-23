@@ -1,5 +1,6 @@
 import { useLocale, useTranslations } from "next-intl";
 
+import { Link } from "@/i18n/navigation";
 import type { FeedItem } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +30,10 @@ export function FeedCard({ item }: Readonly<{ item: FeedItem }>) {
   const isComplaint = item.type === "complaint";
 
   return (
-    <article className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-ring/40">
+    <Link
+      href={`/companies/${item.company_id}`}
+      className="block rounded-xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-ring/40 hover:shadow-sm"
+    >
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span
           className={cn(
@@ -84,6 +88,6 @@ export function FeedCard({ item }: Readonly<{ item: FeedItem }>) {
       <p className="mt-2 text-xs text-muted-foreground">
         {item.author_pseudonym}
       </p>
-    </article>
+    </Link>
   );
 }

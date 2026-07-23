@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
+import { ModeratorTools } from "@/components/moderation/moderator-tools";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import {
@@ -137,6 +138,7 @@ export default async function CompanyPage({
                     </p>
                   </div>
                 )}
+                <ModeratorTools targetKind="reviews" targetId={review.id} />
               </article>
             ))}
           </div>
@@ -202,6 +204,10 @@ export default async function CompanyPage({
                     </p>
                   </div>
                 )}
+                <ModeratorTools
+                  targetKind="complaints"
+                  targetId={complaint.id}
+                />
               </article>
             ))}
           </div>

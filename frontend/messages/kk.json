@@ -4,7 +4,8 @@
     "rights": "Құқық орталығы",
     "about": "Сервис жайлы",
     "login": "Кіру",
-    "logout": "Шығу"
+    "logout": "Шығу",
+    "panel": "Панель"
   },
   "auth": {
     "loginTitle": "Кіру",
@@ -26,17 +27,17 @@
   },
   "hero": {
     "title": "Жұмыс берушіңді алдын ала тексер",
-    "subtitle": "Рейтингтер, верифицирленген отзывтар және вакансия-шағымдар. Фактіге сүйенген ашық платформа.",
+    "subtitle": "Рейтингтер, расталған пікірлер және вакансия-шағымдар. Фактіге сүйенген ашық платформа.",
     "searchPlaceholder": "Компания атауы немесе БСН...",
     "searchButton": "Іздеу",
     "statsCompanies": "компания",
-    "statsReviews": "отзыв",
+    "statsReviews": "пікір",
     "statsComplaints": "шағым"
   },
   "feed": {
     "title": "Соңғы жазбалар",
     "empty": "Әзірге жазба жоқ — алғашқысын сен қалдыр!",
-    "reviewLabel": "Отзыв",
+    "reviewLabel": "Пікір",
     "verified": "Расталған",
     "categories": {
       "salary_fraud": "Жалақы-алдау",
@@ -68,11 +69,11 @@
   },
   "company": {
     "bin": "БСН",
-    "ratingCaption": "{count} отзыв, {verified} расталған",
-    "leaveReview": "Отзыв қалдыру",
+    "ratingCaption": "{count} пікір, {verified} расталған",
+    "leaveReview": "Пікір қалдыру",
     "leaveComplaint": "Шағым қалдыру",
-    "reviewsTitle": "Отзывтар ({count})",
-    "noReviews": "Әзірге отзыв жоқ.",
+    "reviewsTitle": "Пікірлер ({count})",
+    "noReviews": "Әзірге пікір жоқ.",
     "complaintsTitle": "Кандидат шағымдары ({count})",
     "noComplaints": "Әзірге шағым жоқ.",
     "companyResponse": "Компанияның ресми жауабы",
@@ -107,14 +108,14 @@
     "descriptionPlaceholder": "Қысқаша сипаттама (міндетті емес)"
   },
   "reviewForm": {
-    "title": "Отзыв қалдыру",
+    "title": "Пікір қалдыру",
     "factHint": "Фактімен жаз: не болды, қашан, дәлелің бар ма. Бағалауыш қорлау модерациядан өтпейді.",
     "scoreLabel": "Жалпы баға",
     "bodyPlaceholder": "Не болғанын нақты жаз (кемінде 50 таңба)...",
     "anonHint": "Ескерту: мәтінде өзіңді танытып алма («бөлімде жалғыз істедім» деген де әшкерелейді).",
     "finesLabel": "Заңсыз айыппұл салынды (ЕК бойынша жұмыс беруші айыппұл сала алмайды)",
     "submit": "Жариялау",
-    "genericError": "Қате шықты. Кірдің бе? Отзывқа worker-аккаунт керек."
+    "genericError": "Қате шықты. Кірдің бе? Пікірге worker-аккаунт керек."
   },
   "complaintForm": {
     "title": "Вакансия-шағым қалдыру",
@@ -127,6 +128,59 @@
     "bodyPlaceholder": "Не болғанын нақты жаз (кемінде 50 таңба)...",
     "submit": "Жариялау",
     "genericError": "Қате шықты. Кірдің бе? Шағымға worker-аккаунт керек."
+  },
+  "moderation": {
+    "title": "Ашық модерация",
+    "subtitle": "Әр модераторлық әрекет — кім, не, неге — осы жерде жария тұрады. Модерация да ашық.",
+    "panelLink": "Модератор-панелі",
+    "statsTitle": "Модератор-жауапкершілік (overturn-метрика)",
+    "statsModerator": "Модератор",
+    "statsActions": "Әрекеттер",
+    "statsOverturned": "Бұзылған шешімдер",
+    "logTitle": "Аудит-лог",
+    "logEmpty": "Әзірге модераторлық әрекет жоқ.",
+    "system": "жүйе",
+    "actions": {
+      "hide": "жасырды",
+      "unhide": "қайта ашты",
+      "approve": "мақұлдады",
+      "reject": "қабылдамады",
+      "mask_pii": "PII маскіледі",
+      "verify_review": "верификация шешімі",
+      "award_badge": "бейдж берді",
+      "revoke_badge": "бейдж қайтарды",
+      "ban_user": "бан салды",
+      "appeal_uphold": "апелляция: шешім қалды",
+      "appeal_overturn": "апелляция: шешім бұзылды",
+      "other": "басқа"
+    },
+    "targets": {
+      "review": "пікір",
+      "complaint": "шағым",
+      "evidence": "дәлел",
+      "response": "жауап",
+      "company": "компания",
+      "user": "юзер",
+      "badge": "бейдж",
+      "representative": "өкілдік"
+    },
+    "panelTitle": "Модератор-панелі",
+    "noAccess": "Бұл бетке модератор құқығы керек.",
+    "repsTitle": "Өкілдік өтінімдері",
+    "evidenceTitle": "Дәлел-кезек",
+    "verificationsTitle": "Верификация-кезек",
+    "queueEmpty": "Кезек бос.",
+    "approve": "Мақұлдау",
+    "reject": "Қабылдамау",
+    "reasonPlaceholder": "Себебі (жария көрінеді, кемінде 10 таңба)...",
+    "preview": "Файлды көру",
+    "hide": "Жасыру",
+    "cancel": "Болдырмау",
+    "methods": {
+      "employment_contract": "Еңбек шарты",
+      "bank_statement": "Банк-выписка",
+      "other": "Басқа"
+    }
   },
   "footer": {
     "aboutTitle": "Платформа",

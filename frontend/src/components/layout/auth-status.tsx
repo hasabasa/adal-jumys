@@ -28,8 +28,19 @@ export function AuthStatus() {
     );
   }
 
+  const isModerator =
+    user.trust_level === "moderator" || user.trust_level === "admin";
+
   return (
     <div className="flex items-center gap-2 text-sm">
+      {isModerator && (
+        <Link
+          href="/moderation/panel"
+          className="rounded-md bg-accent px-2 py-1 text-xs font-medium text-accent-foreground transition-colors hover:opacity-80"
+        >
+          {t("panel")}
+        </Link>
+      )}
       <span className="font-medium">{user.pseudonym}</span>
       <Button size="sm" variant="outline" onClick={() => clearToken()}>
         {t("logout")}
