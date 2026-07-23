@@ -5,12 +5,14 @@ import { ModeratorTools } from "@/components/moderation/moderator-tools";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import {
+  evidenceUrl,
   getBadges,
   getCompany,
   getComplaints,
   getComplaintStats,
   getRating,
   getReviews,
+  type Evidence,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +28,25 @@ export default async function CompanyPage({
 
   const company = await getCompany(id);
   if (company === null) notFound();
+
+  function EvidenceLinks({ items }: Readonly<{ items: Evidence[] }>) {
+    if (items.length === 0) return null;
+    return (
+      <div className="mt-2 flex flex-wrap gap-2">
+        {items.map((item, index) => (
+          <a
+            key={item.id}
+            href={evidenceUrl(item.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-md border border-border px-2 py-0.5 text-xs text-primary transition-colors hover:border-ring/40"
+          >
+            {t("evidenceItem", { number: index + 1 })}
+          </a>
+        ))}
+      </div>
+    );
+  }
 
   const [rating, badges, reviews, complaints, stats] = await Promise.all([
     getRating(id),
@@ -174,6 +195,7 @@ export default async function CompanyPage({
                   </span>
                 </div>
                 <p className="mt-2 text-sm">{review.body}</p>
+                <EvidenceLinks items={review.evidence} />
                 {review.company_response && (
                   <div className="mt-3 rounded-lg bg-secondary p-3">
                     <p className="text-xs font-semibold">
@@ -240,6 +262,7 @@ export default async function CompanyPage({
                   </p>
                 )}
                 <p className="mt-2 text-sm">{complaint.body}</p>
+                <EvidenceLinks items={complaint.evidence} />
                 {complaint.company_response && (
                   <div className="mt-3 rounded-lg bg-secondary p-3">
                     <p className="text-xs font-semibold">

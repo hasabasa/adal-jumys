@@ -4,6 +4,7 @@ from fastapi.responses import RedirectResponse
 
 from app.api.routes import (
     auth,
+    comments,
     companies,
     complaints,
     evidence,
@@ -35,6 +36,7 @@ app.include_router(complaints.router)
 app.include_router(moderation.router)
 app.include_router(evidence.router)
 app.include_router(feed.router)
+app.include_router(comments.router)
 
 
 @app.get("/", include_in_schema=False)

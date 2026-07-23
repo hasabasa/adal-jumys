@@ -11,6 +11,7 @@ from app.api.deps import CurrentModerator, CurrentUser, DbSession
 from app.api.routes.evidence import serve_file
 from app.models import (
     Appeal,
+    Comment,
     Company,
     CompanyRepresentative,
     EvidenceFile,
@@ -39,14 +40,15 @@ router = APIRouter(prefix="/moderation", tags=["moderation"])
 TARGETS = {
     "reviews": (Review, "review"),
     "complaints": (VacancyComplaint, "complaint"),
+    "comments": (Comment, "comment"),
 }
 
-TargetKind = Literal["reviews", "complaints"]
+TargetKind = Literal["reviews", "complaints", "comments"]
 
 
 async def _get_target(
     db: DbSession, target_kind: TargetKind, target_id: uuid.UUID
-) -> tuple[Review | VacancyComplaint, str]:
+) -> tuple[Review | VacancyComplaint | Comment, str]:
     model, target_type = TARGETS[target_kind]
     obj = await db.get(model, target_id)
     if obj is None:
@@ -54,6 +56,19 @@ async def _get_target(
             status_code=status.HTTP_404_NOT_FOUND, detail="Контент табылмады"
         )
     return obj, target_type
+
+
+async def _company_id_of(
+    db: DbSession, obj: Review | VacancyComplaint | Comment
+) -> uuid.UUID | None:
+    """Комментарийдің компаниясы ата-посты арқылы табылады."""
+    if not isinstance(obj, Comment):
+        return obj.company_id
+    if obj.review_id is not None:
+        parent = await db.get(Review, obj.review_id)
+    else:
+        parent = await db.get(VacancyComplaint, obj.complaint_id)
+    return parent.company_id if parent else None
 
 
 async def _check_conflict_of_interest(
@@ -118,12 +133,15 @@ async def hide_content(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Контент онсыз да жасырулы"
         )
-    await _check_conflict_of_interest(db, moderator, obj.company_id)
+    company_id = await _company_id_of(db, obj)
+    if company_id is not None:
+        await _check_conflict_of_interest(db, moderator, company_id)
     obj.hidden_at = datetime.now(timezone.utc)
     obj.hidden_by_id = moderator.id
     obj.hidden_reason = data.reason
     entry = _log_action(db, moderator, "hide", target_type, target_id, data.reason)
-    await recompute_badges(db, obj.company_id)
+    if company_id is not None and not isinstance(obj, Comment):
+        await recompute_badges(db, company_id)
     await db.commit()
     await db.refresh(entry)
     return _to_public(entry, moderator.pseudonym)
@@ -142,12 +160,15 @@ async def unhide_content(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Контент жасырулы емес"
         )
-    await _check_conflict_of_interest(db, moderator, obj.company_id)
+    company_id = await _company_id_of(db, obj)
+    if company_id is not None:
+        await _check_conflict_of_interest(db, moderator, company_id)
     obj.hidden_at = None
     obj.hidden_by_id = None
     obj.hidden_reason = None
     entry = _log_action(db, moderator, "unhide", target_type, target_id, data.reason)
-    await recompute_badges(db, obj.company_id)
+    if company_id is not None and not isinstance(obj, Comment):
+        await recompute_badges(db, company_id)
     await db.commit()
     await db.refresh(entry)
     return _to_public(entry, moderator.pseudonym)

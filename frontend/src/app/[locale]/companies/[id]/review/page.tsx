@@ -8,10 +8,14 @@ import {
   EMPTY_DISCRIMINATION,
   toApiBlocks,
 } from "@/components/forms/discrimination-field";
+import { FilePicker } from "@/components/forms/file-picker";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
-import { post } from "@/lib/api";
+import { post, uploadFile } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+
+const ACCEPT =
+  "image/jpeg,image/png,image/webp,application/pdf,audio/mpeg,audio/ogg,video/mp4";
 
 const PROBLEMS = [
   "unpaid_salary",
@@ -40,6 +44,8 @@ export default function ReviewFormPage({
   const [body, setBody] = useState("");
   const [problems, setProblems] = useState<string[]>([]);
   const [discrimination, setDiscrimination] = useState(EMPTY_DISCRIMINATION);
+  const [files, setFiles] = useState<File[]>([]);
+  const [verificationFiles, setVerificationFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -48,7 +54,7 @@ export default function ReviewFormPage({
     setBusy(true);
     setError(null);
     try {
-      await post(
+      const review = await post<{ id: string }>(
         `/companies/${id}/reviews`,
         {
           overall_score: score,
@@ -58,6 +64,20 @@ export default function ReviewFormPage({
         },
         getToken(),
       );
+      for (const file of files) {
+        await uploadFile(
+          `/companies/${id}/reviews/${review.id}/evidence`,
+          file,
+          getToken(),
+        );
+      }
+      if (verificationFiles[0]) {
+        await uploadFile(
+          `/companies/${id}/reviews/${review.id}/verification`,
+          verificationFiles[0],
+          getToken(),
+        );
+      }
       router.push(`/companies/${id}`);
       router.refresh();
     } catch (err) {
@@ -127,6 +147,35 @@ export default function ReviewFormPage({
           value={discrimination}
           onChange={setDiscrimination}
         />
+
+        <div className="rounded-lg border border-border p-3">
+          <label className="text-sm font-medium">{t("evidenceLabel")}</label>
+          <div className="mt-2">
+            <FilePicker
+              files={files}
+              onChange={setFiles}
+              multiple
+              accept={ACCEPT}
+            />
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {t("evidenceHint")}
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-border p-3">
+          <label className="text-sm font-medium">{t("verificationLabel")}</label>
+          <div className="mt-2">
+            <FilePicker
+              files={verificationFiles}
+              onChange={setVerificationFiles}
+              accept={ACCEPT}
+            />
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {t("verificationHint")}
+          </p>
+        </div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
         <Button type="submit" disabled={busy}>

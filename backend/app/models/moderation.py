@@ -30,6 +30,7 @@ TARGET_TYPES = (
     "user",
     "badge",
     "representative",
+    "comment",
 )
 APPEAL_STATUSES = ("open", "upheld", "overturned")
 

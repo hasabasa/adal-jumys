@@ -8,10 +8,14 @@ import {
   EMPTY_DISCRIMINATION,
   toApiBlocks,
 } from "@/components/forms/discrimination-field";
+import { FilePicker } from "@/components/forms/file-picker";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
-import { post } from "@/lib/api";
+import { post, uploadFile } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+
+const ACCEPT =
+  "image/jpeg,image/png,image/webp,application/pdf,audio/mpeg,audio/ogg,video/mp4";
 
 const CATEGORIES = [
   "salary_fraud",
@@ -41,6 +45,7 @@ export default function ComplaintFormPage({
   const [actual, setActual] = useState("");
   const [body, setBody] = useState("");
   const [discrimination, setDiscrimination] = useState(EMPTY_DISCRIMINATION);
+  const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -49,10 +54,15 @@ export default function ComplaintFormPage({
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // Бриф-талап: шағымға скрин-дәлел МІНДЕТТІ (вакансиялар өшіріледі)
+    if (files.length === 0) {
+      setError(t("evidenceRequired"));
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
-      await post(
+      const complaint = await post<{ id: string }>(
         `/companies/${id}/complaints`,
         {
           category,
@@ -65,6 +75,13 @@ export default function ComplaintFormPage({
         },
         getToken(),
       );
+      for (const file of files) {
+        await uploadFile(
+          `/companies/${id}/complaints/${complaint.id}/evidence`,
+          file,
+          getToken(),
+        );
+      }
       router.push(`/companies/${id}`);
       router.refresh();
     } catch (err) {
@@ -168,6 +185,23 @@ export default function ComplaintFormPage({
           onChange={setDiscrimination}
           required={isDiscrimination}
         />
+
+        <div className="rounded-lg border border-border p-3">
+          <label className="text-sm font-medium">
+            {t("evidenceLabel")} <span className="text-destructive">*</span>
+          </label>
+          <div className="mt-2">
+            <FilePicker
+              files={files}
+              onChange={setFiles}
+              multiple
+              accept={ACCEPT}
+            />
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {t("evidenceHint")}
+          </p>
+        </div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
         <Button type="submit" disabled={busy}>
