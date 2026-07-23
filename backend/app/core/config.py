@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     upload_dir: str = "var/uploads"
     max_upload_mb: int = 10
 
+    # Компания-реестр API (бос болса lookup өшірулі, каталог қолмен толады)
+    registry_api_url: str = ""
+    registry_api_key: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -8,6 +8,7 @@ dependencies = [
     "asyncpg>=0.31.0",
     "boto3>=1.43.54",
     "fastapi>=0.139.2",
+    "httpx2>=2.7.0",
     "pwdlib[argon2]>=0.3.0",
     "pydantic-settings>=2.14.2",
     "pydantic[email]>=2.13.4",

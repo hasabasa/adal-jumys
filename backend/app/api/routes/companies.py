@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException, Query, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import or_, select
 
 from app.api.deps import CurrentUser, DbSession, VisibleCompany
@@ -11,7 +13,18 @@ from app.schemas.company import (
     RepresentativePublic,
     RepresentativeRequest,
 )
+from app.services.bin_check import is_valid_bin
 from app.services.rating import employer_rating
+from app.services.registry import (
+    DataEgovRegistryClient,
+    NullRegistryClient,
+    RegistryInfo,
+    get_registry,
+)
+
+RegistryDep = Annotated[
+    NullRegistryClient | DataEgovRegistryClient, Depends(get_registry)
+]
 
 router = APIRouter(prefix="/companies", tags=["companies"])
 
@@ -58,6 +71,26 @@ async def list_companies(
         query = query.where(Company.city.ilike(city))
     query = query.order_by(Company.name).limit(limit).offset(offset)
     return list((await db.scalars(query)).all())
+
+
+@router.get("/lookup/{company_bin}", response_model=RegistryInfo)
+async def lookup_bin(company_bin: str, registry: RegistryDep) -> RegistryInfo:
+    """Форма-автотолтыру: реестрден компания мәліметін тарту.
+
+    Реестр қосылмаған/таппаған кезде 404: юзер қолмен енгізе береді.
+    """
+    if not is_valid_bin(company_bin):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="БСН жарамсыз (чексум сәйкес емес)",
+        )
+    info = await registry.lookup(company_bin)
+    if info is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Реестрден табылмады, мәліметті қолмен енгізіңіз",
+        )
+    return info
 
 
 @router.get("/{company_id}", response_model=CompanyPublic)
