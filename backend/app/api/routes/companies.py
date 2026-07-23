@@ -144,6 +144,20 @@ async def request_representation(
     return representative
 
 
+@router.get("/{company_id}/representatives/me")
+async def my_representation(
+    company: VisibleCompany, db: DbSession, user: CurrentUser
+) -> dict:
+    """Ағымдағы юзердің осы компаниядағы өкілдік-статусы (UI күй-көрсеткіші)."""
+    rep = await db.scalar(
+        select(CompanyRepresentative).where(
+            CompanyRepresentative.company_id == company.id,
+            CompanyRepresentative.user_id == user.id,
+        )
+    )
+    return {"status": rep.status if rep else "none"}
+
+
 @router.get("/{company_id}/rating", response_model=EmployerRatingPublic)
 async def get_employer_rating(
     company: VisibleCompany, db: DbSession

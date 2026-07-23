@@ -2,6 +2,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { CommentsSection } from "@/components/comments/comments-section";
+import { RepresentButton } from "@/components/company/represent-button";
+import { RespondButton } from "@/components/company/respond-button";
 import { HelpfulButton } from "@/components/feed/helpful-button";
 import { Avatar } from "@/components/feed/avatar";
 import { ShareButton } from "@/components/feed/share-button";
@@ -139,6 +141,9 @@ export default async function CompanyPage({
                 ? t("sourceRegistry")
                 : t("sourceUser")}
             </span>
+          </div>
+          <div className="mt-2">
+            <RepresentButton companyId={id} />
           </div>
         </div>
       </div>
@@ -371,6 +376,12 @@ export default async function CompanyPage({
                     </p>
                   </div>
                 )}
+                <RespondButton
+                  companyId={id}
+                  kind="reviews"
+                  postId={review.id}
+                  hasResponse={review.company_response !== null}
+                />
                 <div className="mt-3 flex items-center gap-2 border-t border-border pt-2.5">
                   <HelpfulButton
                     companyId={id}
@@ -451,6 +462,12 @@ export default async function CompanyPage({
                     </p>
                   </div>
                 )}
+                <RespondButton
+                  companyId={id}
+                  kind="complaints"
+                  postId={complaint.id}
+                  hasResponse={complaint.company_response !== null}
+                />
                 <div className="mt-3 flex items-center gap-2 border-t border-border pt-2.5">
                   <HelpfulButton
                     companyId={id}

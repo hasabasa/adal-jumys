@@ -131,3 +131,17 @@ def test_representative_flow_and_response(client, register, auth_header, promote
         headers=ctx["hr"],
     )
     assert duplicate.status_code == 409
+
+
+def test_my_representation_status(client, register, auth_header, promote):
+    ctx = _setup(client, register, auth_header, promote)
+    company_id = ctx["company_id"]
+    url = f"/companies/{company_id}/representatives/me"
+
+    assert client.get(url, headers=ctx["hr"]).json() == {"status": "none"}
+    client.post(
+        f"/companies/{company_id}/representatives",
+        json={"proof_method": "domain_email"},
+        headers=ctx["hr"],
+    )
+    assert client.get(url, headers=ctx["hr"]).json() == {"status": "pending"}
