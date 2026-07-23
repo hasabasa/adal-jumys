@@ -49,6 +49,85 @@
       "discrimination": "Кемсітушілік"
     }
   },
+  "companies": {
+    "title": "Компаниялар",
+    "searchPlaceholder": "Атауы немесе БСН...",
+    "searchButton": "Іздеу",
+    "empty": "Ештеңе табылмады. Компанияны өзің қоса аласың.",
+    "addCompany": "Компания қосу",
+    "bin": "БСН",
+    "newHint": "БСН енгізсең — атауы мен мекенжайын реестрден өзіміз толтырамыз.",
+    "binPlaceholder": "БСН (12 цифр)",
+    "lookupButton": "Реестрден алу",
+    "lookupNotFound": "Реестрден табылмады — қолмен толтыра бер.",
+    "namePlaceholder": "Компания атауы",
+    "cityPlaceholder": "Қала (міндетті емес)",
+    "addressPlaceholder": "Мекенжай (міндетті емес)",
+    "createButton": "Қосу",
+    "genericError": "Қате шықты. Кірдің бе? Компания қосуға аккаунт керек."
+  },
+  "company": {
+    "bin": "БСН",
+    "ratingCaption": "{count} отзыв, {verified} расталған",
+    "leaveReview": "Отзыв қалдыру",
+    "leaveComplaint": "Шағым қалдыру",
+    "reviewsTitle": "Отзывтар ({count})",
+    "noReviews": "Әзірге отзыв жоқ.",
+    "complaintsTitle": "Кандидат шағымдары ({count})",
+    "noComplaints": "Әзірге шағым жоқ.",
+    "companyResponse": "Компанияның ресми жауабы",
+    "illegalFines": "Заңсыз айыппұл",
+    "badges": {
+      "salary_not_confirmed": "Жарияланған жалақы расталмайды",
+      "repeated_language_discrimination": "Тілдік кемсітушілік: қайталанған шағымдар",
+      "repeated_illegal_fines": "Заңсыз айыппұлдар: қайталанған шағымдар",
+      "officially_confirmed_violation": "Ресми расталған бұзушылық"
+    },
+    "stages": {
+      "announcement": "Хабарландыру",
+      "call": "Қоңырау",
+      "interview": "Собеседование",
+      "offer": "Оффер"
+    }
+  },
+  "discr": {
+    "toggle": "Кемсітушілік болды",
+    "kinds": {
+      "language": "Тіл",
+      "age": "Жас",
+      "gender": "Жыныс",
+      "ethnicity": "Ұлт",
+      "other": "Басқа"
+    },
+    "forms": {
+      "vacancy_text": "Вакансия мәтінінде",
+      "interview": "Собеседованиеде",
+      "at_work": "Жұмыс барысында"
+    },
+    "descriptionPlaceholder": "Қысқаша сипаттама (міндетті емес)"
+  },
+  "reviewForm": {
+    "title": "Отзыв қалдыру",
+    "factHint": "Фактімен жаз: не болды, қашан, дәлелің бар ма. Бағалауыш қорлау модерациядан өтпейді.",
+    "scoreLabel": "Жалпы баға",
+    "bodyPlaceholder": "Не болғанын нақты жаз (кемінде 50 таңба)...",
+    "anonHint": "Ескерту: мәтінде өзіңді танытып алма («бөлімде жалғыз істедім» деген де әшкерелейді).",
+    "finesLabel": "Заңсыз айыппұл салынды (ЕК бойынша жұмыс беруші айыппұл сала алмайды)",
+    "submit": "Жариялау",
+    "genericError": "Қате шықты. Кірдің бе? Отзывқа worker-аккаунт керек."
+  },
+  "complaintForm": {
+    "title": "Вакансия-шағым қалдыру",
+    "hint": "Кандидат тәжірибесі: жалақы-алдау, фейк-вакансия, этикасыз сұрақтар...",
+    "categoryLabel": "Категория",
+    "stageLabel": "Кезең",
+    "sourceLabel": "Дереккөз",
+    "advertisedPlaceholder": "Жарияланған жалақы ₸",
+    "actualPlaceholder": "Нақты ұсынылған ₸",
+    "bodyPlaceholder": "Не болғанын нақты жаз (кемінде 50 таңба)...",
+    "submit": "Жариялау",
+    "genericError": "Қате шықты. Кірдің бе? Шағымға worker-аккаунт керек."
+  },
   "footer": {
     "aboutTitle": "Платформа",
     "about": "Сервис жайлы",
