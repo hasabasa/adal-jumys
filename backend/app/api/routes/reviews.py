@@ -7,6 +7,7 @@ from app.api.deps import (
     CurrentUser,
     DbSession,
     VisibleCompany,
+    rate_limit,
     require_approved_representative,
 )
 from app.api.routes.evidence import store_upload
@@ -52,7 +53,12 @@ def to_public(
     )
 
 
-@router.post("", response_model=ReviewPublic, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=ReviewPublic,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[rate_limit(10, 3600, "review_create")],
+)
 async def create_review(
     company: VisibleCompany, data: ReviewCreate, db: DbSession, user: CurrentUser
 ) -> ReviewPublic:

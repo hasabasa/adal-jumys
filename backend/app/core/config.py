@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     registry_api_url: str = ""
     registry_api_key: str = ""
 
+    # memory: бір-worker dev; redis: прод (көп worker лимитті бөліседі)
+    rate_limit_backend: str = "memory"
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,6 +10,7 @@ from sqlalchemy import select
 from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models import Company, CompanyRepresentative, User
+from app.services.ratelimit import Limiter, get_limiter
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -59,6 +60,29 @@ async def get_visible_company(company_id: uuid.UUID, db: DbSession) -> Company:
 
 
 VisibleCompany = Annotated[Company, Depends(get_visible_company)]
+
+
+def rate_limit(times: int, seconds: int, scope: str):
+    """Роут-декоратор тәуелділігі: IP бойынша fixed-window лимит.
+
+    Қолдану: @router.post(..., dependencies=[rate_limit(5, 300, "register")])
+    """
+
+    async def dependency(
+        request: Request, limiter: Annotated[Limiter, Depends(get_limiter)]
+    ) -> None:
+        forwarded = request.headers.get("x-forwarded-for", "")
+        ip = forwarded.split(",")[0].strip() or (
+            request.client.host if request.client else "unknown"
+        )
+        allowed = await limiter.hit(f"{scope}:{ip}", times, seconds)
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Тым көп сұраныс, біраздан соң қайталаңыз",
+            )
+
+    return Depends(dependency)
 
 
 async def require_approved_representative(

@@ -1,7 +1,23 @@
-# Жергілікті әзірлеу ортасы: PostgreSQL + Redis
-# Іске қосу: docker compose up -d
-# (Backend әзірге жергілікті жүргізіледі: cd backend && uv run uvicorn app.main:app --reload)
+# Жергілікті әзірлеу ортасы
+# Тек БД + Redis (backend жергілікті uv-мен): docker compose up -d
+# Бәрі бірге (backend қоса):                  docker compose --profile app up -d
 services:
+  backend:
+    profiles: ["app"]
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://adal:adal-dev-password@postgres:5432/adal_jumys
+      REDIS_URL: redis://redis:6379/0
+      RATE_LIMIT_BACKEND: redis
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY орта айнымалысы керек}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   postgres:
     image: postgres:16-alpine
     environment:

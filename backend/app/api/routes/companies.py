@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import or_, select
 
-from app.api.deps import CurrentUser, DbSession, VisibleCompany
+from app.api.deps import CurrentUser, DbSession, VisibleCompany, rate_limit
 from app.models import Company, CompanyBadge, CompanyRepresentative
 from app.schemas.company import (
     BadgePublic,
@@ -29,7 +29,12 @@ RegistryDep = Annotated[
 router = APIRouter(prefix="/companies", tags=["companies"])
 
 
-@router.post("", response_model=CompanyPublic, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=CompanyPublic,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[rate_limit(20, 3600, "company_create")],
+)
 async def create_company(
     data: CompanyCreate, db: DbSession, user: CurrentUser
 ) -> Company:
@@ -73,7 +78,11 @@ async def list_companies(
     return list((await db.scalars(query)).all())
 
 
-@router.get("/lookup/{company_bin}", response_model=RegistryInfo)
+@router.get(
+    "/lookup/{company_bin}",
+    response_model=RegistryInfo,
+    dependencies=[rate_limit(30, 60, "lookup")],
+)
 async def lookup_bin(company_bin: str, registry: RegistryDep) -> RegistryInfo:
     """Форма-автотолтыру: реестрден компания мәліметін тарту.
 
