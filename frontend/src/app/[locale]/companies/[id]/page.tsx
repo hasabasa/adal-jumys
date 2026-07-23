@@ -113,32 +113,89 @@ export default async function CompanyPage({
             </span>
           </div>
         </div>
-        <div className="text-center">
-          <div className="text-4xl font-bold text-primary">
+      </div>
+
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <div className="text-2xl font-bold text-primary">
             {rating.rating ?? "—"}
+            <span className="text-sm font-normal text-muted-foreground">
+              /10
+            </span>
           </div>
-          <div className="text-xs text-muted-foreground">
-            {t("ratingCaption", {
-              count: rating.review_count,
-              verified: rating.verified_count,
-            })}
+          <div className="mt-1 text-xs text-muted-foreground">
+            {t("tiles.rating")}
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            "rounded-xl border p-4 text-center",
+            badges.length >= 3
+              ? "border-destructive/40 bg-destructive/10"
+              : badges.length > 0
+                ? "border-warning/40 bg-warning/10"
+                : "border-border bg-card",
+          )}
+        >
+          <div
+            className={cn(
+              "text-2xl font-bold",
+              badges.length >= 3
+                ? "text-destructive"
+                : badges.length > 0
+                  ? "text-warning"
+                  : "text-success",
+            )}
+          >
+            {badges.length}
+          </div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            {t("tiles.riskFactors")}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <div className="text-2xl font-bold">{rating.review_count}</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            {t("tiles.reviews", { verified: rating.verified_count })}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <div className="text-2xl font-bold">{stats.total}</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            {t("tiles.complaints")}
           </div>
         </div>
       </div>
 
       {badges.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {badges.map((badge) => (
-            <span
-              key={badge.badge}
-              title={badge.note ?? undefined}
-              className="rounded-md bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive"
-            >
-              {t(`badges.${badge.badge}`)}
-            </span>
-          ))}
-        </div>
+        <section className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+          <h2 className="text-sm font-semibold text-destructive">
+            {t("riskTitle")}
+          </h2>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {badges.map((badge) => (
+              <span
+                key={badge.badge}
+                title={badge.note ?? undefined}
+                className="rounded-md bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive"
+              >
+                {t(`badges.${badge.badge}`)}
+              </span>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">{t("riskNote")}</p>
+        </section>
       )}
+
+      <section className="mt-4 rounded-xl border border-dashed border-border p-4">
+        <h2 className="text-sm font-semibold">{t("officialTitle")}</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {t("officialSoon")}
+        </p>
+      </section>
 
       <div className="mt-6 flex flex-wrap gap-2">
         <Button render={<Link href={`/companies/${id}/review`} />}>

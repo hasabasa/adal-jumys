@@ -48,7 +48,9 @@
       "ghost_vacancy": "Ghost-вакансия",
       "unpaid_test_task": "Төленбейтін тестілік",
       "discrimination": "Кемсітушілік"
-    }
+    },
+    "share": "Бөлісу",
+    "copied": "Сілтеме көшірілді!"
   },
   "companies": {
     "title": "Компаниялар",
@@ -73,7 +75,6 @@
   },
   "company": {
     "bin": "БСН",
-    "ratingCaption": "{count} пікір, {verified} расталған",
     "leaveReview": "Пікір қалдыру",
     "leaveComplaint": "Шағым қалдыру",
     "reviewsTitle": "Пікірлер ({count})",
@@ -97,7 +98,17 @@
     "website": "Сайт",
     "sourceRegistry": "тізілімнен импортталған",
     "sourceUser": "қолданушы қосқан",
-    "evidenceItem": "Дәлел {number}"
+    "evidenceItem": "Дәлел {number}",
+    "tiles": {
+      "rating": "Жұмыс беруші рейтингі",
+      "riskFactors": "Тәуекел-фактор",
+      "reviews": "Пікір ({verified} расталған)",
+      "complaints": "Кандидат шағымы"
+    },
+    "riskTitle": "Тіркелген тәуекел-белгілер",
+    "riskNote": "Белгілер тәуелсіз авторлардың расталған жазбаларынан автоматты есептеледі. Әдістемесі ашық: docs/rating.md",
+    "officialTitle": "Ресми деректер",
+    "officialSoon": "Жақын арада: сот істері, салық берешегі, еңбек инспекциясының айыппұлдары - ашық мемлекеттік дереккөздерден."
   },
   "discr": {
     "toggle": "Кемсіту немесе қысым болды",
