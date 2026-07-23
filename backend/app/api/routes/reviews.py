@@ -9,7 +9,8 @@ from app.api.deps import (
     VisibleCompany,
     require_approved_representative,
 )
-from app.models import CompanyResponse, Review, User
+from app.models import CompanyResponse, DiscriminationDetail, Review, User
+from app.schemas.discrimination import DiscriminationPublic
 from app.schemas.response import CompanyResponsePublic, ResponseCreate
 from app.schemas.review import ReviewCreate, ReviewPublic
 
@@ -17,7 +18,10 @@ router = APIRouter(prefix="/companies/{company_id}/reviews", tags=["reviews"])
 
 
 def to_public(
-    review: Review, pseudonym: str, response: CompanyResponse | None = None
+    review: Review,
+    pseudonym: str,
+    response: CompanyResponse | None = None,
+    discrimination: list[DiscriminationDetail] | None = None,
 ) -> ReviewPublic:
     return ReviewPublic(
         id=review.id,
@@ -36,6 +40,9 @@ def to_public(
         company_response=(
             CompanyResponsePublic.model_validate(response) if response else None
         ),
+        discrimination=[
+            DiscriminationPublic.model_validate(d) for d in (discrimination or [])
+        ],
     )
 
 
@@ -58,16 +65,23 @@ async def create_review(
             status_code=status.HTTP_409_CONFLICT,
             detail="Бұл компанияға отзывыңыз бар (1 компанияға 1 отзыв)",
         )
+    payload = data.model_dump()
+    blocks = payload.pop("discrimination")
     review = Review(
         company_id=company.id,
         author_id=user.id,
         moderation_status="published",
-        **data.model_dump(),
+        **payload,
     )
     db.add(review)
+    await db.flush()
+    details = [DiscriminationDetail(review_id=review.id, **block) for block in blocks]
+    db.add_all(details)
     await db.commit()
     await db.refresh(review)
-    return to_public(review, user.pseudonym)
+    for detail in details:
+        await db.refresh(detail)
+    return to_public(review, user.pseudonym, None, details)
 
 
 @router.get("", response_model=list[ReviewPublic])
@@ -97,9 +111,20 @@ async def list_reviews(
         .limit(limit)
         .offset(offset)
     )
+    items = rows.all()
+    review_ids = [review.id for review, _, _ in items]
+    details_by_review: dict[uuid.UUID, list[DiscriminationDetail]] = {}
+    if review_ids:
+        details = await db.scalars(
+            select(DiscriminationDetail).where(
+                DiscriminationDetail.review_id.in_(review_ids)
+            )
+        )
+        for detail in details.all():
+            details_by_review.setdefault(detail.review_id, []).append(detail)
     return [
-        to_public(review, pseudonym, response)
-        for review, pseudonym, response in rows.all()
+        to_public(review, pseudonym, response, details_by_review.get(review.id))
+        for review, pseudonym, response in items
     ]
 
 

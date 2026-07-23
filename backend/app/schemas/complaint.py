@@ -4,6 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
+from app.schemas.discrimination import DiscriminationCreate, DiscriminationPublic
 from app.schemas.response import CompanyResponsePublic
 
 Category = Literal[
@@ -28,6 +29,9 @@ class ComplaintCreate(BaseModel):
     advertised_salary: int | None = Field(default=None, ge=0)
     actual_salary: int | None = Field(default=None, ge=0)
     body: str = Field(min_length=50, max_length=10_000)
+    discrimination: list[DiscriminationCreate] = Field(
+        default_factory=list, max_length=5
+    )
 
     @model_validator(mode="after")
     def salary_pair_required_for_fraud(self) -> "ComplaintCreate":
@@ -36,6 +40,14 @@ class ComplaintCreate(BaseModel):
         ):
             raise ValueError(
                 "salary_fraud шағымына жарияланған және нақты жалақы міндетті"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def discrimination_block_required(self) -> "ComplaintCreate":
+        if self.category == "discrimination" and not self.discrimination:
+            raise ValueError(
+                "discrimination шағымына кемсітушілік блогы міндетті"
             )
         return self
 
@@ -55,6 +67,7 @@ class ComplaintPublic(BaseModel):
     body: str
     created_at: datetime
     company_response: CompanyResponsePublic | None = None
+    discrimination: list[DiscriminationPublic] = []
 
     @computed_field
     def salary_diff_percent(self) -> int | None:
@@ -71,3 +84,4 @@ class ComplaintStats(BaseModel):
 
     total: int
     by_category: dict[str, int]
+    by_discrimination_kind: dict[str, int]

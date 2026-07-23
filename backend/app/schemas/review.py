@@ -3,6 +3,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.schemas.discrimination import DiscriminationCreate, DiscriminationPublic
 from app.schemas.response import CompanyResponsePublic
 
 
@@ -16,6 +17,9 @@ class ReviewCreate(BaseModel):
     body: str = Field(min_length=50, max_length=10_000)
     employment_start: date | None = None
     employment_end: date | None = None
+    discrimination: list[DiscriminationCreate] = Field(
+        default_factory=list, max_length=5
+    )
 
     @model_validator(mode="after")
     def employment_period_valid(self) -> "ReviewCreate":
@@ -45,3 +49,4 @@ class ReviewPublic(BaseModel):
     verification_status: str
     created_at: datetime
     company_response: CompanyResponsePublic | None = None
+    discrimination: list[DiscriminationPublic] = []

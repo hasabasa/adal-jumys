@@ -9,8 +9,9 @@ from app.api.deps import (
     VisibleCompany,
     require_approved_representative,
 )
-from app.models import CompanyResponse, User, VacancyComplaint
+from app.models import CompanyResponse, DiscriminationDetail, User, VacancyComplaint
 from app.schemas.complaint import ComplaintCreate, ComplaintPublic, ComplaintStats
+from app.schemas.discrimination import DiscriminationPublic
 from app.schemas.response import CompanyResponsePublic, ResponseCreate
 
 router = APIRouter(prefix="/companies/{company_id}/complaints", tags=["complaints"])
@@ -23,7 +24,10 @@ VISIBLE = (
 
 
 def to_public(
-    complaint: VacancyComplaint, pseudonym: str, response: CompanyResponse | None = None
+    complaint: VacancyComplaint,
+    pseudonym: str,
+    response: CompanyResponse | None = None,
+    discrimination: list[DiscriminationDetail] | None = None,
 ) -> ComplaintPublic:
     return ComplaintPublic(
         id=complaint.id,
@@ -40,6 +44,9 @@ def to_public(
         company_response=(
             CompanyResponsePublic.model_validate(response) if response else None
         ),
+        discrimination=[
+            DiscriminationPublic.model_validate(d) for d in (discrimination or [])
+        ],
     )
 
 
@@ -52,16 +59,25 @@ async def create_complaint(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Шағымды тек жұмысшы-аккаунт қалдыра алады",
         )
+    payload = data.model_dump()
+    blocks = payload.pop("discrimination")
     complaint = VacancyComplaint(
         company_id=company.id,
         author_id=user.id,
         moderation_status="published",
-        **data.model_dump(),
+        **payload,
     )
     db.add(complaint)
+    await db.flush()
+    details = [
+        DiscriminationDetail(complaint_id=complaint.id, **block) for block in blocks
+    ]
+    db.add_all(details)
     await db.commit()
     await db.refresh(complaint)
-    return to_public(complaint, user.pseudonym)
+    for detail in details:
+        await db.refresh(detail)
+    return to_public(complaint, user.pseudonym, None, details)
 
 
 @router.get("", response_model=list[ComplaintPublic])
@@ -86,9 +102,20 @@ async def list_complaints(
         .limit(limit)
         .offset(offset)
     )
+    items = rows.all()
+    complaint_ids = [complaint.id for complaint, _, _ in items]
+    details_by_complaint: dict[uuid.UUID, list[DiscriminationDetail]] = {}
+    if complaint_ids:
+        details = await db.scalars(
+            select(DiscriminationDetail).where(
+                DiscriminationDetail.complaint_id.in_(complaint_ids)
+            )
+        )
+        for detail in details.all():
+            details_by_complaint.setdefault(detail.complaint_id, []).append(detail)
     return [
-        to_public(complaint, pseudonym, response)
-        for complaint, pseudonym, response in rows.all()
+        to_public(complaint, pseudonym, response, details_by_complaint.get(complaint.id))
+        for complaint, pseudonym, response in items
     ]
 
 
@@ -139,4 +166,18 @@ async def complaint_stats(company: VisibleCompany, db: DbSession) -> ComplaintSt
         .group_by(VacancyComplaint.category)
     )
     by_category = {category: count for category, count in rows.all()}
-    return ComplaintStats(total=sum(by_category.values()), by_category=by_category)
+    kind_rows = await db.execute(
+        select(DiscriminationDetail.kind, func.count())
+        .join(
+            VacancyComplaint,
+            DiscriminationDetail.complaint_id == VacancyComplaint.id,
+        )
+        .where(VacancyComplaint.company_id == company.id, *VISIBLE)
+        .group_by(DiscriminationDetail.kind)
+    )
+    by_kind = {kind: count for kind, count in kind_rows.all()}
+    return ComplaintStats(
+        total=sum(by_category.values()),
+        by_category=by_category,
+        by_discrimination_kind=by_kind,
+    )
