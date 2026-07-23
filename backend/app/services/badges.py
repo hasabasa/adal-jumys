@@ -15,6 +15,7 @@ from app.models import (
     CompanyBadge,
     DiscriminationDetail,
     Review,
+    ReviewProblem,
     VacancyComplaint,
 )
 
@@ -79,9 +80,11 @@ async def _language_discrimination_authors(
 async def _illegal_fines_authors(db: AsyncSession, company_id: uuid.UUID) -> int:
     return (
         await db.scalar(
-            select(func.count(func.distinct(Review.author_id))).where(
+            select(func.count(func.distinct(Review.author_id)))
+            .join(ReviewProblem, ReviewProblem.review_id == Review.id)
+            .where(
                 Review.company_id == company_id,
-                Review.illegal_fines.is_(True),
+                ReviewProblem.problem == "illegal_fines",
                 *REVIEW_VISIBLE,
             )
         )

@@ -55,7 +55,7 @@ def test_fines_badge_and_revoke_on_hide(client, register, auth_header, promote):
     for i in range(3):
         response = client.post(
             f"/companies/{company_id}/reviews",
-            json={"overall_score": 2, "body": REVIEW_BODY, "illegal_fines": True},
+            json={"overall_score": 2, "body": REVIEW_BODY, "problems": ["illegal_fines"]},
             headers=auth_header(f"f{i}@t.kz"),
         )
         review_ids.append(response.json()["id"])

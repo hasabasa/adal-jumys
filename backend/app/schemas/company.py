@@ -14,6 +14,7 @@ class CompanyCreate(BaseModel):
     address: str | None = Field(default=None, max_length=500)
     two_gis_url: HttpUrl | None = None
     website: HttpUrl | None = None
+    instagram_url: HttpUrl | None = None
 
     @field_validator("bin")
     @classmethod
@@ -83,5 +84,6 @@ class CompanyPublic(BaseModel):
     oked: str | None
     two_gis_url: str | None
     website: str | None
+    instagram_url: str | None
     source: str
     created_at: datetime

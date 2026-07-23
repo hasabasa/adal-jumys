@@ -5,7 +5,7 @@ from app.models.company import Company, CompanyBadge, CompanyRepresentative
 from app.models.complaint import DiscriminationDetail, VacancyComplaint
 from app.models.evidence import CompanyResponse, EvidenceFile
 from app.models.moderation import Appeal, ModerationAction
-from app.models.review import Review, VerificationRecord
+from app.models.review import Review, ReviewProblem, VerificationRecord
 from app.models.tip import DailyTip
 from app.models.user import KarmaEvent, User
 
@@ -21,6 +21,7 @@ __all__ = [
     "KarmaEvent",
     "ModerationAction",
     "Review",
+    "ReviewProblem",
     "User",
     "VacancyComplaint",
     "VerificationRecord",

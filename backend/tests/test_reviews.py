@@ -108,6 +108,41 @@ def test_rating_bayesian_math(client, register, auth_header):
     assert rating["verified_count"] == 1
 
 
+def test_problems_checklist(client, register, auth_header):
+    """docs/categories.md чеклисті: жарамдылары сақталады, белгісізі 422."""
+    register("w@t.kz", "worker_01")
+    headers = auth_header("w@t.kz")
+    company_id = _make_company(client, headers)
+    created = client.post(
+        f"/companies/{company_id}/reviews",
+        json={
+            "overall_score": 2,
+            "body": REVIEW_BODY,
+            "problems": ["unpaid_salary", "no_contract", "illegal_fines"],
+        },
+        headers=headers,
+    )
+    assert created.status_code == 201
+    listed = client.get(f"/companies/{company_id}/reviews").json()
+    assert sorted(listed[0]["problems"]) == [
+        "illegal_fines",
+        "no_contract",
+        "unpaid_salary",
+    ]
+
+    register("w2@t.kz", "worker_02")
+    invalid = client.post(
+        f"/companies/{company_id}/reviews",
+        json={
+            "overall_score": 2,
+            "body": REVIEW_BODY,
+            "problems": ["belgisiz_kategoria"],
+        },
+        headers=auth_header("w2@t.kz"),
+    )
+    assert invalid.status_code == 422
+
+
 def test_discrimination_block(client, register, auth_header):
     register("w@t.kz", "worker_01")
     headers = auth_header("w@t.kz")

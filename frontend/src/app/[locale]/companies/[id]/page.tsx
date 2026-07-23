@@ -22,6 +22,7 @@ export default async function CompanyPage({
   const t = await getTranslations("company");
   const tFeed = await getTranslations("feed");
   const tDiscr = await getTranslations("discr");
+  const tProblems = await getTranslations("problems");
 
   const company = await getCompany(id);
   if (company === null) notFound();
@@ -48,6 +49,48 @@ export default async function CompanyPage({
               {company.address}
             </p>
           )}
+          {company.oked && (
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {t("oked")}: {company.oked}
+            </p>
+          )}
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+            {company.two_gis_url && (
+              <a
+                href={company.two_gis_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-md border border-border px-2 py-1 transition-colors hover:border-ring/40 hover:text-primary"
+              >
+                2GIS
+              </a>
+            )}
+            {company.website && (
+              <a
+                href={company.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-md border border-border px-2 py-1 transition-colors hover:border-ring/40 hover:text-primary"
+              >
+                {t("website")}
+              </a>
+            )}
+            {company.instagram_url && (
+              <a
+                href={company.instagram_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-md border border-border px-2 py-1 transition-colors hover:border-ring/40 hover:text-primary"
+              >
+                Instagram
+              </a>
+            )}
+            <span className="text-muted-foreground">
+              {company.source === "registry_import"
+                ? t("sourceRegistry")
+                : t("sourceUser")}
+            </span>
+          </div>
         </div>
         <div className="text-center">
           <div className="text-4xl font-bold text-primary">
@@ -110,11 +153,14 @@ export default async function CompanyPage({
                       {tFeed("verified")}
                     </span>
                   )}
-                  {review.illegal_fines && (
-                    <span className="rounded-md bg-destructive/10 px-2 py-0.5 font-medium text-destructive">
-                      {t("illegalFines")}
+                  {review.problems.map((problem) => (
+                    <span
+                      key={problem}
+                      className="rounded-md bg-destructive/10 px-2 py-0.5 font-medium text-destructive"
+                    >
+                      {tProblems(problem)}
                     </span>
-                  )}
+                  ))}
                   {review.discrimination.map((block, index) => (
                     <span
                       key={index}

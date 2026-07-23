@@ -15,6 +15,9 @@ export default function NewCompanyPage() {
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
+  const [twoGis, setTwoGis] = useState("");
+  const [website, setWebsite] = useState("");
+  const [instagram, setInstagram] = useState("");
   const [lookupState, setLookupState] = useState<"idle" | "busy" | "notfound">(
     "idle",
   );
@@ -45,6 +48,9 @@ export default function NewCompanyPage() {
           name,
           city: city || null,
           address: address || null,
+          two_gis_url: twoGis || null,
+          website: website || null,
+          instagram_url: instagram || null,
         },
         getToken(),
       );
@@ -103,6 +109,28 @@ export default function NewCompanyPage() {
           placeholder={t("addressPlaceholder")}
           className="h-10 rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
+        <input
+          value={twoGis}
+          onChange={(event) => setTwoGis(event.target.value)}
+          type="url"
+          placeholder={t("twoGisPlaceholder")}
+          className="h-10 rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        />
+        <input
+          value={website}
+          onChange={(event) => setWebsite(event.target.value)}
+          type="url"
+          placeholder={t("websitePlaceholder")}
+          className="h-10 rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        />
+        <input
+          value={instagram}
+          onChange={(event) => setInstagram(event.target.value)}
+          type="url"
+          placeholder={t("instagramPlaceholder")}
+          className="h-10 rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        />
+        <p className="text-xs text-muted-foreground">{t("officialOnlyHint")}</p>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <Button type="submit" disabled={busy}>
           {busy ? "..." : t("createButton")}

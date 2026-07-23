@@ -1,8 +1,9 @@
 import uuid
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.models.review import REVIEW_PROBLEMS
 from app.schemas.discrimination import DiscriminationCreate, DiscriminationPublic
 from app.schemas.evidence import EvidencePublic
 from app.schemas.response import CompanyResponsePublic
@@ -16,12 +17,21 @@ class ReviewCreate(BaseModel):
     score_contract: int | None = Field(default=None, ge=1, le=10)
     # Минимум 50 таңба: факт-формат бір сөзді "жаман" деген бағадан қорғайды
     body: str = Field(min_length=50, max_length=10_000)
-    illegal_fines: bool = False
+    # docs/categories.md чеклисті (ЕК-баптарына байланған 13 категория)
+    problems: list[str] = Field(default_factory=list, max_length=13)
     employment_start: date | None = None
     employment_end: date | None = None
     discrimination: list[DiscriminationCreate] = Field(
         default_factory=list, max_length=5
     )
+
+    @field_validator("problems")
+    @classmethod
+    def problems_valid(cls, values: list[str]) -> list[str]:
+        unknown = set(values) - set(REVIEW_PROBLEMS)
+        if unknown:
+            raise ValueError(f"Белгісіз категория: {', '.join(sorted(unknown))}")
+        return list(dict.fromkeys(values))
 
     @model_validator(mode="after")
     def employment_period_valid(self) -> "ReviewCreate":
@@ -46,7 +56,7 @@ class ReviewPublic(BaseModel):
     score_overtime: int | None
     score_contract: int | None
     body: str
-    illegal_fines: bool
+    problems: list[str] = []
     employment_start: date | None
     employment_end: date | None
     verification_status: str

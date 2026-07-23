@@ -11,7 +11,14 @@ from app.api.deps import (
     require_approved_representative,
 )
 from app.api.routes.evidence import store_upload
-from app.models import CompanyResponse, DiscriminationDetail, EvidenceFile, Review, User
+from app.models import (
+    CompanyResponse,
+    DiscriminationDetail,
+    EvidenceFile,
+    Review,
+    ReviewProblem,
+    User,
+)
 from app.schemas.discrimination import DiscriminationPublic
 from app.schemas.evidence import EvidencePublic
 from app.schemas.response import CompanyResponsePublic, ResponseCreate
@@ -27,6 +34,7 @@ def to_public(
     response: CompanyResponse | None = None,
     discrimination: list[DiscriminationDetail] | None = None,
     evidence: list[EvidenceFile] | None = None,
+    problems: list[str] | None = None,
 ) -> ReviewPublic:
     return ReviewPublic(
         id=review.id,
@@ -38,7 +46,7 @@ def to_public(
         score_overtime=review.score_overtime,
         score_contract=review.score_contract,
         body=review.body,
-        illegal_fines=review.illegal_fines,
+        problems=problems or [],
         employment_start=review.employment_start,
         employment_end=review.employment_end,
         verification_status=review.verification_status,
@@ -79,6 +87,7 @@ async def create_review(
         )
     payload = data.model_dump()
     blocks = payload.pop("discrimination")
+    problems = payload.pop("problems")
     review = Review(
         company_id=company.id,
         author_id=user.id,
@@ -89,12 +98,15 @@ async def create_review(
     await db.flush()
     details = [DiscriminationDetail(review_id=review.id, **block) for block in blocks]
     db.add_all(details)
+    db.add_all(
+        ReviewProblem(review_id=review.id, problem=problem) for problem in problems
+    )
     await recompute_badges(db, company.id)
     await db.commit()
     await db.refresh(review)
     for detail in details:
         await db.refresh(detail)
-    return to_public(review, user.pseudonym, None, details)
+    return to_public(review, user.pseudonym, None, details, None, problems)
 
 
 @router.get("", response_model=list[ReviewPublic])
@@ -128,6 +140,7 @@ async def list_reviews(
     review_ids = [review.id for review, _, _ in items]
     details_by_review: dict[uuid.UUID, list[DiscriminationDetail]] = {}
     evidence_by_review: dict[uuid.UUID, list[EvidenceFile]] = {}
+    problems_by_review: dict[uuid.UUID, list[str]] = {}
     if review_ids:
         details = await db.scalars(
             select(DiscriminationDetail).where(
@@ -144,6 +157,13 @@ async def list_reviews(
         )
         for evidence in evidence_rows.all():
             evidence_by_review.setdefault(evidence.review_id, []).append(evidence)
+        problem_rows = await db.scalars(
+            select(ReviewProblem).where(ReviewProblem.review_id.in_(review_ids))
+        )
+        for problem in problem_rows.all():
+            problems_by_review.setdefault(problem.review_id, []).append(
+                problem.problem
+            )
     return [
         to_public(
             review,
@@ -151,6 +171,7 @@ async def list_reviews(
             response,
             details_by_review.get(review.id),
             evidence_by_review.get(review.id),
+            problems_by_review.get(review.id),
         )
         for review, pseudonym, response in items
     ]

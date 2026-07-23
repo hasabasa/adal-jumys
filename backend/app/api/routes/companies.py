@@ -51,6 +51,7 @@ async def create_company(
         address=data.address,
         two_gis_url=str(data.two_gis_url) if data.two_gis_url else None,
         website=str(data.website) if data.website else None,
+        instagram_url=str(data.instagram_url) if data.instagram_url else None,
         source="user_created",
     )
     db.add(company)

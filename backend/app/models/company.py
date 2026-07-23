@@ -39,6 +39,8 @@ class Company(ModerationHideMixin, TimestampMixin, Base):
     oked: Mapped[str | None] = mapped_column(Text)
     two_gis_url: Mapped[str | None] = mapped_column(Text)
     website: Mapped[str | None] = mapped_column(Text)
+    # ТЕК ресми бизнес-аккаунт (жеке адам аккаунты ешқашан)
+    instagram_url: Mapped[str | None] = mapped_column(Text)
     source: Mapped[str] = mapped_column(Text)
 
     __table_args__ = (

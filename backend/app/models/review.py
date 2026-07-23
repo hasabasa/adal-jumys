@@ -10,7 +10,6 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
-    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -20,6 +19,23 @@ VERIFICATION_STATUSES = ("unverified", "pending", "verified", "rejected")
 MODERATION_STATUSES = ("pending", "published", "hidden")
 VERIFICATION_METHODS = ("employment_contract", "bank_statement", "other")
 VERIFICATION_DECISIONS = ("approved", "rejected")
+
+# docs/categories.md: әр категория ЕК-бабына байланған
+REVIEW_PROBLEMS = (
+    "unpaid_salary",           # ЕК 113
+    "delayed_salary",          # ЕК 113
+    "no_pension_contributions",  # Зейнетақы туралы ҚРЗ
+    "unpaid_overtime",         # ЕК 78, 108
+    "unpaid_holiday_work",     # ЕК 109
+    "no_contract",             # ЕК 33
+    "illegal_fines",           # ЕК 115
+    "no_vacation",             # ЕК 88
+    "no_sick_leave",           # ЕК 133
+    "unsafe_conditions",       # ЕК 182
+    "illegal_dismissal",       # ЕК 52, 54
+    "no_final_settlement",     # ЕК 113
+    "forced_labor",            # ЕК 7
+)
 
 
 class Review(ModerationHideMixin, TimestampMixin, Base):
@@ -40,9 +56,6 @@ class Review(ModerationHideMixin, TimestampMixin, Base):
     score_overtime: Mapped[int | None] = mapped_column(SmallInteger)
     score_contract: Mapped[int | None] = mapped_column(SmallInteger)
     body: Mapped[str] = mapped_column(Text)
-    # ҚР ЕК бойынша жұмыс беруші қызметкерге айыппұл сала алмайды - бұл өріс
-    # сол заңсыз тәжірибені құрылымды түрде тіркейді (бейдж-детекцияға негіз)
-    illegal_fines: Mapped[bool] = mapped_column(server_default=text("false"))
     employment_start: Mapped[date | None] = mapped_column(Date)
     employment_end: Mapped[date | None] = mapped_column(Date)
     verification_status: Mapped[str] = mapped_column(Text, server_default="unverified")
@@ -77,6 +90,23 @@ class Review(ModerationHideMixin, TimestampMixin, Base):
             sql_in("moderation_status", MODERATION_STATUSES),
             name="moderation_status_valid",
         ),
+    )
+
+
+class ReviewProblem(Base):
+    """Пікірдегі проблема-чеклист жазбасы (docs/categories.md тізімі)."""
+
+    __tablename__ = "review_problems"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    review_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("reviews.id", ondelete="CASCADE"), index=True
+    )
+    problem: Mapped[str] = mapped_column(Text)
+
+    __table_args__ = (
+        UniqueConstraint("review_id", "problem"),
+        CheckConstraint(sql_in("problem", REVIEW_PROBLEMS), name="problem_valid"),
     )
 
 
