@@ -10,6 +10,7 @@ from app.api.routes import (
     evidence,
     feed,
     moderation,
+    reports,
     reviews,
     votes,
 )
@@ -39,6 +40,7 @@ app.include_router(evidence.router)
 app.include_router(feed.router)
 app.include_router(comments.router)
 app.include_router(votes.router)
+app.include_router(reports.router)
 
 
 @app.get("/", include_in_schema=False)

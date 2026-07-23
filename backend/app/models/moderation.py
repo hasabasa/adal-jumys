@@ -31,6 +31,7 @@ TARGET_TYPES = (
     "badge",
     "representative",
     "comment",
+    "report",
 )
 APPEAL_STATUSES = ("open", "upheld", "overturned")
 

@@ -9,6 +9,7 @@ import {
   moderationFileUrl,
   post,
   type EvidenceQueueItem,
+  type ReportQueueItem,
   type RepresentativeQueueItem,
   type VerificationQueueItem,
 } from "@/lib/api";
@@ -71,13 +72,14 @@ export default function ModerationPanelPage() {
   const [verifications, setVerifications] = useState<VerificationQueueItem[]>(
     [],
   );
+  const [reports, setReports] = useState<ReportQueueItem[]>([]);
   const [method, setMethod] = useState("employment_contract");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     const token = getToken();
-    const [reps, evid, verif] = await Promise.all([
+    const [reps, evid, verif, reps2] = await Promise.all([
       authedGet<RepresentativeQueueItem[]>(
         "/moderation/representatives",
         token,
@@ -85,10 +87,12 @@ export default function ModerationPanelPage() {
       ),
       authedGet<EvidenceQueueItem[]>("/moderation/evidence", token, []),
       authedGet<VerificationQueueItem[]>("/moderation/verifications", token, []),
+      authedGet<ReportQueueItem[]>("/moderation/reports", token, []),
     ]);
     setRepresentatives(reps);
     setEvidence(evid);
     setVerifications(verif);
+    setReports(reps2);
   }, []);
 
   useEffect(() => {
@@ -134,6 +138,71 @@ export default function ModerationPanelPage() {
     <div className="mx-auto max-w-4xl px-4 py-10">
       <h1 className="text-2xl font-bold">{t("panelTitle")}</h1>
       {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
+
+      <section className="mt-8">
+        <h2 className="text-sm font-semibold">
+          {t("reportsTitle")} ({reports.length})
+        </h2>
+        {reports.length === 0 ? (
+          <p className="mt-2 text-sm text-muted-foreground">{t("queueEmpty")}</p>
+        ) : (
+          reports.map((item) => (
+            <div
+              key={item.id}
+              className="mt-2 rounded-lg border border-border bg-card p-3 text-sm"
+            >
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                {item.is_company_claim && (
+                  <span className="rounded-md bg-warning/15 px-2 py-0.5 font-medium text-warning">
+                    {t("companyClaim")}
+                  </span>
+                )}
+                {item.verified_claim && (
+                  <span className="rounded-md bg-success/10 px-2 py-0.5 font-medium text-success">
+                    {t("verifiedClaim")}
+                  </span>
+                )}
+                <span className="rounded-md bg-secondary px-2 py-0.5">
+                  {t(`reportReasons.${item.reason}`)}
+                </span>
+                <span className="text-muted-foreground">
+                  {item.reporter_pseudonym}
+                </span>
+              </div>
+              {item.body && <p className="mt-1.5">{item.body}</p>}
+              {item.evidence_ids.length > 0 && (
+                <p className="mt-1.5 text-xs">
+                  {item.evidence_ids.map((evidenceId, index) => (
+                    <a
+                      key={evidenceId}
+                      href={moderationFileUrl(evidenceId)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mr-2 text-primary hover:underline"
+                    >
+                      {t("counterEvidence")} {index + 1}
+                    </a>
+                  ))}
+                </p>
+              )}
+              <ReasonActions
+                busy={busy}
+                approveLabel={t("hidePost")}
+                rejectLabel={t("keepPost")}
+                reasonPlaceholder={t("reasonPlaceholder")}
+                onDecision={(decision, reason) =>
+                  decide(
+                    `/moderation/reports/${item.id}/resolve/${
+                      decision === "approve" ? "hide" : "keep"
+                    }`,
+                    { reason },
+                  )
+                }
+              />
+            </div>
+          ))
+        )}
+      </section>
 
       <section className="mt-8">
         <h2 className="text-sm font-semibold">

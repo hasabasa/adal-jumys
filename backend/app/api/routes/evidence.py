@@ -18,6 +18,7 @@ async def store_upload(
     *,
     review_id: uuid.UUID | None = None,
     complaint_id: uuid.UUID | None = None,
+    report_id: uuid.UUID | None = None,
     purpose: str = "public_evidence",
 ) -> EvidenceFile:
     settings = get_settings()
@@ -36,6 +37,7 @@ async def store_upload(
     evidence = EvidenceFile(
         review_id=review_id,
         complaint_id=complaint_id,
+        report_id=report_id,
         purpose=purpose,
         s3_key=key,
         mime_type=file.content_type,

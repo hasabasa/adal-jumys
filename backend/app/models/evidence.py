@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, TimestampMixin, sql_in, uuid_pk
 from app.models.review import MODERATION_STATUSES
 
-EVIDENCE_PURPOSES = ("public_evidence", "verification")
+EVIDENCE_PURPOSES = ("public_evidence", "verification", "report")
 EVIDENCE_STATUSES = ("pending_moderation", "visible", "hidden", "deleted")
 
 
@@ -28,6 +28,10 @@ class EvidenceFile(TimestampMixin, Base):
     complaint_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("vacancy_complaints.id", ondelete="CASCADE"), index=True
     )
+    # Компания-даудың кері дәлелі (жария емес, тек модераторға)
+    report_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("post_reports.id", ondelete="CASCADE"), index=True
+    )
     purpose: Mapped[str] = mapped_column(Text, server_default="public_evidence")
     s3_key: Mapped[str] = mapped_column(Text)
     mime_type: Mapped[str | None] = mapped_column(Text)
@@ -38,7 +42,8 @@ class EvidenceFile(TimestampMixin, Base):
 
     __table_args__ = (
         CheckConstraint(
-            "(review_id IS NULL) <> (complaint_id IS NULL)", name="exactly_one_parent"
+            "num_nonnulls(review_id, complaint_id, report_id) = 1",
+            name="exactly_one_parent",
         ),
         CheckConstraint(sql_in("purpose", EVIDENCE_PURPOSES), name="purpose_valid"),
         CheckConstraint(sql_in("status", EVIDENCE_STATUSES), name="status_valid"),

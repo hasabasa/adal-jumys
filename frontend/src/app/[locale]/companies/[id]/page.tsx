@@ -6,6 +6,7 @@ import { HelpfulButton } from "@/components/feed/helpful-button";
 import { Avatar } from "@/components/feed/avatar";
 import { ShareButton } from "@/components/feed/share-button";
 import { ModeratorTools } from "@/components/moderation/moderator-tools";
+import { PostMenu } from "@/components/moderation/post-menu";
 import { Button } from "@/components/ui/button";
 import { relativeTime } from "@/lib/format";
 import { Link } from "@/i18n/navigation";
@@ -310,6 +311,7 @@ export default async function CompanyPage({
                   <span className="ml-auto text-base font-bold">
                     {review.overall_score}/10
                   </span>
+                  <PostMenu targetKind="reviews" targetId={review.id} />
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                   <span className="rounded-md bg-accent px-2 py-0.5 font-medium text-accent-foreground">
@@ -402,6 +404,9 @@ export default async function CompanyPage({
                       {relativeTime(complaint.created_at, locale)}
                     </span>
                   </p>
+                  <span className="ml-auto">
+                    <PostMenu targetKind="complaints" targetId={complaint.id} />
+                  </span>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                   <span className="rounded-md bg-secondary px-2 py-0.5 font-medium">

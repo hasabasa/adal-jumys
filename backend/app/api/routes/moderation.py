@@ -9,8 +9,11 @@ from fastapi.responses import Response
 
 from app.api.deps import CurrentModerator, CurrentUser, DbSession
 from app.api.routes.evidence import serve_file
+from pydantic import BaseModel
+
 from app.models import (
     Appeal,
+    PostReport,
     Comment,
     Company,
     CompanyRepresentative,
@@ -536,3 +539,126 @@ async def public_log(
         query = query.where(ModerationAction.target_id == target_id)
     rows = await db.execute(query)
     return [_to_public(entry, pseudonym) for entry, pseudonym in rows.all()]
+
+
+class ReportQueueItem(BaseModel):
+    id: uuid.UUID
+    target_kind: str
+    target_id: uuid.UUID
+    reason: str
+    is_company_claim: bool
+    verified_claim: bool
+    body: str | None
+    reporter_pseudonym: str
+    evidence_ids: list[uuid.UUID]
+    created_at: datetime
+
+
+@router.get("/reports", response_model=list[ReportQueueItem])
+async def report_queue(
+    db: DbSession,
+    moderator: CurrentModerator,
+    status_filter: str = Query(default="open", alias="status"),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+) -> list[ReportQueueItem]:
+    rows = await db.execute(
+        select(PostReport, User.pseudonym)
+        .join(User, PostReport.reporter_id == User.id)
+        .where(PostReport.status == status_filter)
+        # Расталған компания-даулар кезектің басында
+        .order_by(PostReport.verified_claim.desc(), PostReport.created_at)
+        .limit(limit)
+        .offset(offset)
+    )
+    items = rows.all()
+    report_ids = [report.id for report, _ in items]
+    evidence_by_report: dict[uuid.UUID, list[uuid.UUID]] = {}
+    if report_ids:
+        evidence_rows = await db.scalars(
+            select(EvidenceFile).where(
+                EvidenceFile.report_id.in_(report_ids),
+                EvidenceFile.status != "deleted",
+            )
+        )
+        for evidence in evidence_rows.all():
+            evidence_by_report.setdefault(evidence.report_id, []).append(evidence.id)
+    result = []
+    for report, pseudonym in items:
+        if report.review_id is not None:
+            target_kind, target_id = "reviews", report.review_id
+        elif report.complaint_id is not None:
+            target_kind, target_id = "complaints", report.complaint_id
+        else:
+            target_kind, target_id = "comments", report.comment_id
+        result.append(
+            ReportQueueItem(
+                id=report.id,
+                target_kind=target_kind,
+                target_id=target_id,
+                reason=report.reason,
+                is_company_claim=report.is_company_claim,
+                verified_claim=report.verified_claim,
+                body=report.body,
+                reporter_pseudonym=pseudonym,
+                evidence_ids=evidence_by_report.get(report.id, []),
+                created_at=report.created_at,
+            )
+        )
+    return result
+
+
+@router.post(
+    "/reports/{report_id}/resolve/{decision}",
+    response_model=ModerationActionPublic,
+)
+async def resolve_report(
+    report_id: uuid.UUID,
+    decision: Literal["hide", "keep"],
+    data: HideRequest,
+    db: DbSession,
+    moderator: CurrentModerator,
+) -> ModerationActionPublic:
+    """Шағым-шешім: hide - постты жасыру, keep - пост орнында қалады."""
+    report = await db.get(PostReport, report_id)
+    if report is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Шағым табылмады"
+        )
+    if report.status != "open":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Шағым қаралып қойған (статусы: {report.status})",
+        )
+    if report.review_id is not None:
+        target_kind = "reviews"
+        target_id = report.review_id
+    elif report.complaint_id is not None:
+        target_kind = "complaints"
+        target_id = report.complaint_id
+    else:
+        target_kind = "comments"
+        target_id = report.comment_id
+
+    if decision == "hide":
+        obj, target_type = await _get_target(db, target_kind, target_id)
+        company_id = await _company_id_of(db, obj)
+        if company_id is not None:
+            await _check_conflict_of_interest(db, moderator, company_id)
+        if obj.hidden_at is None:
+            obj.hidden_at = datetime.now(timezone.utc)
+            obj.hidden_by_id = moderator.id
+            obj.hidden_reason = data.reason
+            if company_id is not None and not isinstance(obj, Comment):
+                await recompute_badges(db, company_id)
+        entry = _log_action(db, moderator, "hide", target_type, target_id, data.reason)
+        report.status = "resolved_hidden"
+    else:
+        entry = _log_action(db, moderator, "reject", "report", report_id, data.reason)
+        report.status = "resolved_kept"
+
+    report.resolved_by_id = moderator.id
+    report.resolved_at = datetime.now(timezone.utc)
+    await db.commit()
+    await db.refresh(entry)
+    return _to_public(entry, moderator.pseudonym)
