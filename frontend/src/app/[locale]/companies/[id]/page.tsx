@@ -2,6 +2,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { CommentsSection } from "@/components/comments/comments-section";
+import { HelpfulButton } from "@/components/feed/helpful-button";
 import { Avatar } from "@/components/feed/avatar";
 import { ShareButton } from "@/components/feed/share-button";
 import { ModeratorTools } from "@/components/moderation/moderator-tools";
@@ -348,7 +349,13 @@ export default async function CompanyPage({
                     </p>
                   </div>
                 )}
-                <div className="mt-3 flex items-center gap-4 border-t border-border pt-2.5">
+                <div className="mt-3 flex items-center gap-2 border-t border-border pt-2.5">
+                  <HelpfulButton
+                    companyId={id}
+                    kind="reviews"
+                    postId={review.id}
+                    initialCount={review.helpful_count}
+                  />
                   <CommentsSection
                     companyId={id}
                     kind="reviews"
@@ -409,7 +416,13 @@ export default async function CompanyPage({
                     </p>
                   </div>
                 )}
-                <div className="mt-3 flex items-center gap-4 border-t border-border pt-2.5">
+                <div className="mt-3 flex items-center gap-2 border-t border-border pt-2.5">
+                  <HelpfulButton
+                    companyId={id}
+                    kind="complaints"
+                    postId={complaint.id}
+                    initialCount={complaint.helpful_count}
+                  />
                   <CommentsSection
                     companyId={id}
                     kind="complaints"

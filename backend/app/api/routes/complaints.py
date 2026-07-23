@@ -15,6 +15,7 @@ from app.models import (
     CompanyResponse,
     DiscriminationDetail,
     EvidenceFile,
+    HelpfulVote,
     User,
     VacancyComplaint,
 )
@@ -39,6 +40,7 @@ def to_public(
     response: CompanyResponse | None = None,
     discrimination: list[DiscriminationDetail] | None = None,
     evidence: list[EvidenceFile] | None = None,
+    helpful_count: int = 0,
 ) -> ComplaintPublic:
     return ComplaintPublic(
         id=complaint.id,
@@ -55,6 +57,7 @@ def to_public(
         company_response=(
             CompanyResponsePublic.model_validate(response) if response else None
         ),
+        helpful_count=helpful_count,
         discrimination=[
             DiscriminationPublic.model_validate(d) for d in (discrimination or [])
         ],
@@ -124,6 +127,7 @@ async def list_complaints(
     complaint_ids = [complaint.id for complaint, _, _ in items]
     details_by_complaint: dict[uuid.UUID, list[DiscriminationDetail]] = {}
     evidence_by_complaint: dict[uuid.UUID, list[EvidenceFile]] = {}
+    votes_by_complaint: dict[uuid.UUID, int] = {}
     if complaint_ids:
         details = await db.scalars(
             select(DiscriminationDetail).where(
@@ -140,6 +144,12 @@ async def list_complaints(
         )
         for evidence in evidence_rows.all():
             evidence_by_complaint.setdefault(evidence.complaint_id, []).append(evidence)
+        vote_rows = await db.execute(
+            select(HelpfulVote.complaint_id, func.count())
+            .where(HelpfulVote.complaint_id.in_(complaint_ids))
+            .group_by(HelpfulVote.complaint_id)
+        )
+        votes_by_complaint.update(dict(vote_rows.all()))
     return [
         to_public(
             complaint,
@@ -147,6 +157,7 @@ async def list_complaints(
             response,
             details_by_complaint.get(complaint.id),
             evidence_by_complaint.get(complaint.id),
+            votes_by_complaint.get(complaint.id, 0),
         )
         for complaint, pseudonym, response in items
     ]

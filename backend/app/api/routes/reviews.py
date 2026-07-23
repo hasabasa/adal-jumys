@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, HTTPException, Query, UploadFile, status
-from sqlalchemy import and_, select
+from sqlalchemy import and_, func, select
 
 from app.api.deps import (
     CurrentUser,
@@ -15,6 +15,7 @@ from app.models import (
     CompanyResponse,
     DiscriminationDetail,
     EvidenceFile,
+    HelpfulVote,
     Review,
     ReviewProblem,
     User,
@@ -35,6 +36,7 @@ def to_public(
     discrimination: list[DiscriminationDetail] | None = None,
     evidence: list[EvidenceFile] | None = None,
     problems: list[str] | None = None,
+    helpful_count: int = 0,
 ) -> ReviewPublic:
     return ReviewPublic(
         id=review.id,
@@ -54,6 +56,7 @@ def to_public(
         company_response=(
             CompanyResponsePublic.model_validate(response) if response else None
         ),
+        helpful_count=helpful_count,
         discrimination=[
             DiscriminationPublic.model_validate(d) for d in (discrimination or [])
         ],
@@ -141,6 +144,7 @@ async def list_reviews(
     details_by_review: dict[uuid.UUID, list[DiscriminationDetail]] = {}
     evidence_by_review: dict[uuid.UUID, list[EvidenceFile]] = {}
     problems_by_review: dict[uuid.UUID, list[str]] = {}
+    votes_by_review: dict[uuid.UUID, int] = {}
     if review_ids:
         details = await db.scalars(
             select(DiscriminationDetail).where(
@@ -164,6 +168,12 @@ async def list_reviews(
             problems_by_review.setdefault(problem.review_id, []).append(
                 problem.problem
             )
+        vote_rows = await db.execute(
+            select(HelpfulVote.review_id, func.count())
+            .where(HelpfulVote.review_id.in_(review_ids))
+            .group_by(HelpfulVote.review_id)
+        )
+        votes_by_review.update(dict(vote_rows.all()))
     return [
         to_public(
             review,
@@ -172,6 +182,7 @@ async def list_reviews(
             details_by_review.get(review.id),
             evidence_by_review.get(review.id),
             problems_by_review.get(review.id),
+            votes_by_review.get(review.id, 0),
         )
         for review, pseudonym, response in items
     ]

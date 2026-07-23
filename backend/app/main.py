@@ -11,6 +11,7 @@ from app.api.routes import (
     feed,
     moderation,
     reviews,
+    votes,
 )
 from app.core.config import get_settings
 
@@ -37,6 +38,7 @@ app.include_router(moderation.router)
 app.include_router(evidence.router)
 app.include_router(feed.router)
 app.include_router(comments.router)
+app.include_router(votes.router)
 
 
 @app.get("/", include_in_schema=False)

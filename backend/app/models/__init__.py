@@ -9,6 +9,7 @@ from app.models.moderation import Appeal, ModerationAction
 from app.models.review import Review, ReviewProblem, VerificationRecord
 from app.models.tip import DailyTip
 from app.models.user import KarmaEvent, User
+from app.models.vote import HelpfulVote
 
 __all__ = [
     "Appeal",
@@ -20,6 +21,7 @@ __all__ = [
     "DailyTip",
     "DiscriminationDetail",
     "EvidenceFile",
+    "HelpfulVote",
     "KarmaEvent",
     "ModerationAction",
     "Review",

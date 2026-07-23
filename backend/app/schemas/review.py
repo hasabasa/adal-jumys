@@ -62,5 +62,6 @@ class ReviewPublic(BaseModel):
     verification_status: str
     created_at: datetime
     company_response: CompanyResponsePublic | None = None
+    helpful_count: int = 0
     discrimination: list[DiscriminationPublic] = []
     evidence: list[EvidencePublic] = []
