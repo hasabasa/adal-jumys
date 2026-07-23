@@ -55,9 +55,14 @@ cd backend
 uv sync
 uv run alembic upgrade head
 uv run uvicorn app.main:app --reload
+
+# Frontend (бөлек терминалда)
+cd frontend
+pnpm install
+pnpm dev
 ```
 
-Тексеру: `http://localhost:8000/health` және `http://localhost:8000/docs` (Swagger).
+Тексеру: `http://localhost:8000/docs` (API, Swagger) және `http://localhost:3000` (сайт, `/kk` әдепкі).
 
 Контрибьюторларға: коммит алдында `pre-commit install` жүргізіп ал (gitleaks құпия-сканы және базалық тексерулер).
 
