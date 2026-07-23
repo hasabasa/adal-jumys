@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -7,6 +8,19 @@ from pydantic import BaseModel, Field
 class HideRequest(BaseModel):
     # Себеп жария аудит-логта көрінеді, сондықтан мазмұнды болуы міндетті
     reason: str = Field(min_length=10, max_length=1000)
+
+
+class VerificationDecision(BaseModel):
+    method: Literal["employment_contract", "bank_statement", "other"]
+    reason: str = Field(min_length=10, max_length=1000)
+
+
+class VerificationQueueItem(BaseModel):
+    review_id: uuid.UUID
+    evidence_id: uuid.UUID
+    company_name: str
+    author_pseudonym: str
+    created_at: datetime
 
 
 class ModerationActionPublic(BaseModel):

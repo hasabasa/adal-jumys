@@ -17,10 +17,17 @@ from app.models import (
     Review,
     User,
     VacancyComplaint,
+    VerificationRecord,
 )
 from app.schemas.company import RepresentativeQueueItem
 from app.schemas.evidence import EvidenceDecision, EvidenceModeratorItem
-from app.schemas.moderation import HideRequest, ModerationActionPublic
+from app.schemas.moderation import (
+    HideRequest,
+    ModerationActionPublic,
+    VerificationDecision,
+    VerificationQueueItem,
+)
+from app.services.storage import get_storage
 
 router = APIRouter(prefix="/moderation", tags=["moderation"])
 
@@ -272,6 +279,92 @@ async def decide_evidence(
     else:
         evidence.status = "hidden"
     entry = _log_action(db, moderator, decision, "evidence", evidence_id, data.reason)
+    await db.commit()
+    await db.refresh(entry)
+    return _to_public(entry, moderator.pseudonym)
+
+
+@router.get("/verifications", response_model=list[VerificationQueueItem])
+async def verification_queue(
+    db: DbSession,
+    moderator: CurrentModerator,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+) -> list[VerificationQueueItem]:
+    rows = await db.execute(
+        select(EvidenceFile, Company.name, User.pseudonym)
+        .join(Review, EvidenceFile.review_id == Review.id)
+        .join(Company, Review.company_id == Company.id)
+        .join(User, Review.author_id == User.id)
+        .where(
+            EvidenceFile.purpose == "verification",
+            EvidenceFile.status == "pending_moderation",
+        )
+        .order_by(EvidenceFile.created_at)
+        .limit(limit)
+        .offset(offset)
+    )
+    return [
+        VerificationQueueItem(
+            review_id=evidence.review_id,
+            evidence_id=evidence.id,
+            company_name=company_name,
+            author_pseudonym=pseudonym,
+            created_at=evidence.created_at,
+        )
+        for evidence, company_name, pseudonym in rows.all()
+    ]
+
+
+@router.post(
+    "/verifications/{review_id}/{decision}", response_model=ModerationActionPublic
+)
+async def decide_verification(
+    review_id: uuid.UUID,
+    decision: Literal["approve", "reject"],
+    data: VerificationDecision,
+    db: DbSession,
+    moderator: CurrentModerator,
+) -> ModerationActionPublic:
+    review = await db.get(Review, review_id)
+    if review is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Отзыв табылмады"
+        )
+    if review.verification_status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Верификация күйі: {review.verification_status}",
+        )
+    await _check_conflict_of_interest(db, moderator, review.company_id)
+
+    record = VerificationRecord(
+        review_id=review_id,
+        verified_by_id=moderator.id,
+        method=data.method,
+        decision="approved" if decision == "approve" else "rejected",
+        note=data.reason,
+    )
+    db.add(record)
+    review.verification_status = "verified" if decision == "approve" else "rejected"
+
+    # Минимизация қағидасы: шешім шықты - верификация-файл ДЕРЕУ өшіріледі
+    storage = get_storage()
+    files = await db.scalars(
+        select(EvidenceFile).where(
+            EvidenceFile.review_id == review_id,
+            EvidenceFile.purpose == "verification",
+            EvidenceFile.status != "deleted",
+        )
+    )
+    for evidence in files.all():
+        await storage.delete(evidence.s3_key)
+        evidence.status = "deleted"
+        evidence.deleted_at = datetime.now(timezone.utc)
+
+    entry = _log_action(
+        db, moderator, "verify_review", "review", review_id, data.reason
+    )
     await db.commit()
     await db.refresh(entry)
     return _to_public(entry, moderator.pseudonym)

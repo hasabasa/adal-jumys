@@ -173,6 +173,43 @@ async def upload_review_evidence(
 
 
 @router.post(
+    "/{review_id}/verification",
+    response_model=EvidencePublic,
+    status_code=status.HTTP_201_CREATED,
+)
+async def submit_verification(
+    company: VisibleCompany,
+    review_id: uuid.UUID,
+    file: UploadFile,
+    db: DbSession,
+    user: CurrentUser,
+) -> EvidenceFile:
+    """Жұмыс фактісін растау: файл ТЕК модераторға көрінеді, шешімнен кейін
+    дереу өшіріледі (verification_record ғана қалады)."""
+    review = await db.get(Review, review_id)
+    if review is None or review.company_id != company.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Отзыв табылмады"
+        )
+    if review.author_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Верификацияны тек отзыв авторы сұрай алады",
+        )
+    if review.verification_status != "unverified":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Верификация күйі: {review.verification_status}",
+        )
+    evidence = await store_upload(
+        db, file, review_id=review_id, purpose="verification"
+    )
+    review.verification_status = "pending"
+    await db.commit()
+    return evidence
+
+
+@router.post(
     "/{review_id}/response",
     response_model=CompanyResponsePublic,
     status_code=status.HTTP_201_CREATED,
