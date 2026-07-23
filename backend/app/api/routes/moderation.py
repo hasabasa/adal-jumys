@@ -5,16 +5,21 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import select
 
+from fastapi.responses import Response
+
 from app.api.deps import CurrentModerator, DbSession
+from app.api.routes.evidence import serve_file
 from app.models import (
     Company,
     CompanyRepresentative,
+    EvidenceFile,
     ModerationAction,
     Review,
     User,
     VacancyComplaint,
 )
 from app.schemas.company import RepresentativeQueueItem
+from app.schemas.evidence import EvidenceDecision, EvidenceModeratorItem
 from app.schemas.moderation import HideRequest, ModerationActionPublic
 
 router = APIRouter(prefix="/moderation", tags=["moderation"])
@@ -191,6 +196,82 @@ async def decide_representation(
     entry = _log_action(
         db, moderator, decision, "representative", representative_id, data.reason
     )
+    await db.commit()
+    await db.refresh(entry)
+    return _to_public(entry, moderator.pseudonym)
+
+
+@router.get("/evidence", response_model=list[EvidenceModeratorItem])
+async def evidence_queue(
+    db: DbSession,
+    moderator: CurrentModerator,
+    status_filter: str = Query(default="pending_moderation", alias="status"),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+) -> list[EvidenceFile]:
+    rows = await db.scalars(
+        select(EvidenceFile)
+        .where(EvidenceFile.status == status_filter)
+        .order_by(EvidenceFile.created_at)
+        .limit(limit)
+        .offset(offset)
+    )
+    return list(rows.all())
+
+
+@router.get("/evidence/{evidence_id}/file")
+async def evidence_preview(
+    evidence_id: uuid.UUID, db: DbSession, moderator: CurrentModerator
+) -> Response:
+    """Модератор кез келген (өшірілмеген) дәлелді қарай алады."""
+    evidence = await db.get(EvidenceFile, evidence_id)
+    if evidence is None or evidence.status == "deleted":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Дәлел табылмады"
+        )
+    return serve_file(evidence)
+
+
+@router.post(
+    "/evidence/{evidence_id}/{decision}", response_model=ModerationActionPublic
+)
+async def decide_evidence(
+    evidence_id: uuid.UUID,
+    decision: Literal["approve", "reject"],
+    data: EvidenceDecision,
+    db: DbSession,
+    moderator: CurrentModerator,
+) -> ModerationActionPublic:
+    evidence = await db.get(EvidenceFile, evidence_id)
+    if evidence is None or evidence.status == "deleted":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Дәлел табылмады"
+        )
+    if evidence.purpose != "public_evidence":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Верификация-файл бұл жерде қаралмайды (верификация ағыны бар)",
+        )
+    if evidence.status != "pending_moderation":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Дәлел қаралып қойған (статусы: {evidence.status})",
+        )
+    company_id = None
+    if evidence.review_id is not None:
+        review = await db.get(Review, evidence.review_id)
+        company_id = review.company_id if review else None
+    elif evidence.complaint_id is not None:
+        complaint = await db.get(VacancyComplaint, evidence.complaint_id)
+        company_id = complaint.company_id if complaint else None
+    if company_id is not None:
+        await _check_conflict_of_interest(db, moderator, company_id)
+    if decision == "approve":
+        evidence.status = "visible"
+        evidence.pii_masked = data.pii_masked
+    else:
+        evidence.status = "hidden"
+    entry = _log_action(db, moderator, decision, "evidence", evidence_id, data.reason)
     await db.commit()
     await db.refresh(entry)
     return _to_public(entry, moderator.pseudonym)

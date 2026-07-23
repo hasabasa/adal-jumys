@@ -6,6 +6,7 @@ requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.18.5",
     "asyncpg>=0.31.0",
+    "boto3>=1.43.54",
     "fastapi>=0.139.2",
     "pwdlib[argon2]>=0.3.0",
     "pydantic-settings>=2.14.2",

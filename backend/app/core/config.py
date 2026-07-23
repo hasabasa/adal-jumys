@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     s3_access_key_id: str = ""
     s3_secret_access_key: str = ""
 
+    # local: dev/тест (дискіге жазады); s3: прод (жоғарыдағы S3-конфиг керек)
+    storage_backend: str = "local"
+    upload_dir: str = "var/uploads"
+    max_upload_mb: int = 10
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, UploadFile, status
 from sqlalchemy import and_, func, select
 
 from app.api.deps import (
@@ -9,9 +9,17 @@ from app.api.deps import (
     VisibleCompany,
     require_approved_representative,
 )
-from app.models import CompanyResponse, DiscriminationDetail, User, VacancyComplaint
+from app.api.routes.evidence import store_upload
+from app.models import (
+    CompanyResponse,
+    DiscriminationDetail,
+    EvidenceFile,
+    User,
+    VacancyComplaint,
+)
 from app.schemas.complaint import ComplaintCreate, ComplaintPublic, ComplaintStats
 from app.schemas.discrimination import DiscriminationPublic
+from app.schemas.evidence import EvidencePublic
 from app.schemas.response import CompanyResponsePublic, ResponseCreate
 
 router = APIRouter(prefix="/companies/{company_id}/complaints", tags=["complaints"])
@@ -28,6 +36,7 @@ def to_public(
     pseudonym: str,
     response: CompanyResponse | None = None,
     discrimination: list[DiscriminationDetail] | None = None,
+    evidence: list[EvidenceFile] | None = None,
 ) -> ComplaintPublic:
     return ComplaintPublic(
         id=complaint.id,
@@ -47,6 +56,7 @@ def to_public(
         discrimination=[
             DiscriminationPublic.model_validate(d) for d in (discrimination or [])
         ],
+        evidence=[EvidencePublic.model_validate(e) for e in (evidence or [])],
     )
 
 
@@ -105,6 +115,7 @@ async def list_complaints(
     items = rows.all()
     complaint_ids = [complaint.id for complaint, _, _ in items]
     details_by_complaint: dict[uuid.UUID, list[DiscriminationDetail]] = {}
+    evidence_by_complaint: dict[uuid.UUID, list[EvidenceFile]] = {}
     if complaint_ids:
         details = await db.scalars(
             select(DiscriminationDetail).where(
@@ -113,10 +124,49 @@ async def list_complaints(
         )
         for detail in details.all():
             details_by_complaint.setdefault(detail.complaint_id, []).append(detail)
+        evidence_rows = await db.scalars(
+            select(EvidenceFile).where(
+                EvidenceFile.complaint_id.in_(complaint_ids),
+                EvidenceFile.status == "visible",
+            )
+        )
+        for evidence in evidence_rows.all():
+            evidence_by_complaint.setdefault(evidence.complaint_id, []).append(evidence)
     return [
-        to_public(complaint, pseudonym, response, details_by_complaint.get(complaint.id))
+        to_public(
+            complaint,
+            pseudonym,
+            response,
+            details_by_complaint.get(complaint.id),
+            evidence_by_complaint.get(complaint.id),
+        )
         for complaint, pseudonym, response in items
     ]
+
+
+@router.post(
+    "/{complaint_id}/evidence",
+    response_model=EvidencePublic,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_complaint_evidence(
+    company: VisibleCompany,
+    complaint_id: uuid.UUID,
+    file: UploadFile,
+    db: DbSession,
+    user: CurrentUser,
+) -> EvidenceFile:
+    complaint = await db.get(VacancyComplaint, complaint_id)
+    if complaint is None or complaint.company_id != company.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Шағым табылмады"
+        )
+    if complaint.author_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Дәлелді тек шағым авторы тіркей алады",
+        )
+    return await store_upload(db, file, complaint_id=complaint_id)
 
 
 @router.post(

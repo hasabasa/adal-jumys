@@ -8,6 +8,7 @@ os.environ.setdefault(
     "DATABASE_URL", "postgresql+asyncpg://hasen@localhost:5432/adal_jumys_test"
 )
 os.environ.setdefault("SECRET_KEY", "test-secret-key-32-bytes-minimum-for-hs256")
+os.environ.setdefault("UPLOAD_DIR", "var/test-uploads")
 
 import pytest
 from fastapi.testclient import TestClient

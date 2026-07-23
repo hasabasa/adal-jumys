@@ -4,6 +4,7 @@ from datetime import date, datetime
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.schemas.discrimination import DiscriminationCreate, DiscriminationPublic
+from app.schemas.evidence import EvidencePublic
 from app.schemas.response import CompanyResponsePublic
 
 
@@ -50,3 +51,4 @@ class ReviewPublic(BaseModel):
     created_at: datetime
     company_response: CompanyResponsePublic | None = None
     discrimination: list[DiscriminationPublic] = []
+    evidence: list[EvidencePublic] = []

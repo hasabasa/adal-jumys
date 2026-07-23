@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, UploadFile, status
 from sqlalchemy import and_, select
 
 from app.api.deps import (
@@ -9,8 +9,10 @@ from app.api.deps import (
     VisibleCompany,
     require_approved_representative,
 )
-from app.models import CompanyResponse, DiscriminationDetail, Review, User
+from app.api.routes.evidence import store_upload
+from app.models import CompanyResponse, DiscriminationDetail, EvidenceFile, Review, User
 from app.schemas.discrimination import DiscriminationPublic
+from app.schemas.evidence import EvidencePublic
 from app.schemas.response import CompanyResponsePublic, ResponseCreate
 from app.schemas.review import ReviewCreate, ReviewPublic
 
@@ -22,6 +24,7 @@ def to_public(
     pseudonym: str,
     response: CompanyResponse | None = None,
     discrimination: list[DiscriminationDetail] | None = None,
+    evidence: list[EvidenceFile] | None = None,
 ) -> ReviewPublic:
     return ReviewPublic(
         id=review.id,
@@ -43,6 +46,7 @@ def to_public(
         discrimination=[
             DiscriminationPublic.model_validate(d) for d in (discrimination or [])
         ],
+        evidence=[EvidencePublic.model_validate(e) for e in (evidence or [])],
     )
 
 
@@ -114,6 +118,7 @@ async def list_reviews(
     items = rows.all()
     review_ids = [review.id for review, _, _ in items]
     details_by_review: dict[uuid.UUID, list[DiscriminationDetail]] = {}
+    evidence_by_review: dict[uuid.UUID, list[EvidenceFile]] = {}
     if review_ids:
         details = await db.scalars(
             select(DiscriminationDetail).where(
@@ -122,10 +127,49 @@ async def list_reviews(
         )
         for detail in details.all():
             details_by_review.setdefault(detail.review_id, []).append(detail)
+        evidence_rows = await db.scalars(
+            select(EvidenceFile).where(
+                EvidenceFile.review_id.in_(review_ids),
+                EvidenceFile.status == "visible",
+            )
+        )
+        for evidence in evidence_rows.all():
+            evidence_by_review.setdefault(evidence.review_id, []).append(evidence)
     return [
-        to_public(review, pseudonym, response, details_by_review.get(review.id))
+        to_public(
+            review,
+            pseudonym,
+            response,
+            details_by_review.get(review.id),
+            evidence_by_review.get(review.id),
+        )
         for review, pseudonym, response in items
     ]
+
+
+@router.post(
+    "/{review_id}/evidence",
+    response_model=EvidencePublic,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_review_evidence(
+    company: VisibleCompany,
+    review_id: uuid.UUID,
+    file: UploadFile,
+    db: DbSession,
+    user: CurrentUser,
+) -> EvidenceFile:
+    review = await db.get(Review, review_id)
+    if review is None or review.company_id != company.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Отзыв табылмады"
+        )
+    if review.author_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Дәлелді тек отзыв авторы тіркей алады",
+        )
+    return await store_upload(db, file, review_id=review_id)
 
 
 @router.post(

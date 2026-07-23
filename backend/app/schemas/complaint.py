@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
 from app.schemas.discrimination import DiscriminationCreate, DiscriminationPublic
+from app.schemas.evidence import EvidencePublic
 from app.schemas.response import CompanyResponsePublic
 
 Category = Literal[
@@ -68,6 +69,7 @@ class ComplaintPublic(BaseModel):
     created_at: datetime
     company_response: CompanyResponsePublic | None = None
     discrimination: list[DiscriminationPublic] = []
+    evidence: list[EvidencePublic] = []
 
     @computed_field
     def salary_diff_percent(self) -> int | None:
