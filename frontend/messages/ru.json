@@ -3,7 +3,26 @@
     "companies": "Компании",
     "rights": "Центр прав",
     "about": "О сервисе",
-    "login": "Войти"
+    "login": "Войти",
+    "logout": "Выйти"
+  },
+  "auth": {
+    "loginTitle": "Вход",
+    "registerTitle": "Регистрация",
+    "privacyNote": "Мы не спрашиваем ни имя, ни номер телефона — только email и псевдоним.",
+    "email": "Email",
+    "password": "Пароль (минимум 8 символов)",
+    "pseudonym": "Псевдоним",
+    "pseudonymHint": "Публично виден только псевдоним. Не используйте настоящее имя.",
+    "role_worker": "Я работник",
+    "role_company": "Я компания",
+    "loginButton": "Войти",
+    "registerButton": "Зарегистрироваться",
+    "noAccount": "Нет аккаунта?",
+    "registerLink": "Регистрация",
+    "haveAccount": "Есть аккаунт?",
+    "loginLink": "Войти",
+    "genericError": "Произошла ошибка, попробуйте ещё раз"
   },
   "hero": {
     "title": "Проверь работодателя заранее",
@@ -16,7 +35,19 @@
   },
   "feed": {
     "title": "Последние записи",
-    "comingSoon": "Лента скоро появится"
+    "empty": "Записей пока нет — оставь первую!",
+    "reviewLabel": "Отзыв",
+    "verified": "Подтверждён",
+    "categories": {
+      "salary_fraud": "Обман по зарплате",
+      "fake_vacancy": "Фейковая вакансия",
+      "paid_training": "Платный «тренинг»",
+      "unethical_questions": "Неэтичные вопросы",
+      "rudeness": "Грубость",
+      "ghost_vacancy": "Ghost-вакансия",
+      "unpaid_test_task": "Неоплачиваемое тестовое",
+      "discrimination": "Дискриминация"
+    }
   },
   "footer": {
     "aboutTitle": "Платформа",

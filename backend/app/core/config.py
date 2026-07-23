@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     # memory: бір-worker dev; redis: прод (көп worker лимитті бөліседі)
     rate_limit_backend: str = "memory"
 
+    # Frontend-адрестер (үтірмен бөлінген): CORS осыларға ғана рұқсат береді
+    cors_origins: str = "http://localhost:3000"
+
 
 @lru_cache
 def get_settings() -> Settings:

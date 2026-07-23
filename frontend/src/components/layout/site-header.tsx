@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 
-import { Button } from "@/components/ui/button";
+import { AuthStatus } from "@/components/layout/auth-status";
 import { Link, usePathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
@@ -50,7 +50,7 @@ export function SiteHeader() {
               </Link>
             ))}
           </div>
-          <Button size="sm">{t("login")}</Button>
+          <AuthStatus />
         </div>
       </div>
     </header>

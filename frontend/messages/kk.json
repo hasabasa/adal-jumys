@@ -3,7 +3,26 @@
     "companies": "Компаниялар",
     "rights": "Құқық орталығы",
     "about": "Сервис жайлы",
-    "login": "Кіру"
+    "login": "Кіру",
+    "logout": "Шығу"
+  },
+  "auth": {
+    "loginTitle": "Кіру",
+    "registerTitle": "Тіркелу",
+    "privacyNote": "Аты-жөніңді де, телефон номеріңді де сұрамаймыз — тек email және псевдоним.",
+    "email": "Email",
+    "password": "Пароль (кемінде 8 таңба)",
+    "pseudonym": "Псевдоним",
+    "pseudonymHint": "Жарияда тек псевдоним көрінеді. Нақты атыңа ұқсамасын.",
+    "role_worker": "Жұмысшымын",
+    "role_company": "Компаниямын",
+    "loginButton": "Кіру",
+    "registerButton": "Тіркелу",
+    "noAccount": "Аккаунт жоқ па?",
+    "registerLink": "Тіркелу",
+    "haveAccount": "Аккаунт бар ма?",
+    "loginLink": "Кіру",
+    "genericError": "Қате шықты, қайталап көріңіз"
   },
   "hero": {
     "title": "Жұмыс берушіңді алдын ала тексер",
@@ -16,7 +35,19 @@
   },
   "feed": {
     "title": "Соңғы жазбалар",
-    "comingSoon": "Лента жақын арада қосылады"
+    "empty": "Әзірге жазба жоқ — алғашқысын сен қалдыр!",
+    "reviewLabel": "Отзыв",
+    "verified": "Расталған",
+    "categories": {
+      "salary_fraud": "Жалақы-алдау",
+      "fake_vacancy": "Фейк-вакансия",
+      "paid_training": "Ақылы «тренинг»",
+      "unethical_questions": "Этикасыз сұрақтар",
+      "rudeness": "Дөрекілік",
+      "ghost_vacancy": "Ghost-вакансия",
+      "unpaid_test_task": "Төленбейтін тестілік",
+      "discrimination": "Кемсітушілік"
+    }
   },
   "footer": {
     "aboutTitle": "Платформа",
