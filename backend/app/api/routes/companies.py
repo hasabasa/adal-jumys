@@ -2,8 +2,9 @@ from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import or_, select
 
 from app.api.deps import CurrentUser, DbSession, VisibleCompany
-from app.models import Company, CompanyRepresentative
+from app.models import Company, CompanyBadge, CompanyRepresentative
 from app.schemas.company import (
+    BadgePublic,
     CompanyCreate,
     CompanyPublic,
     EmployerRatingPublic,
@@ -106,3 +107,14 @@ async def get_employer_rating(
 ) -> EmployerRatingPublic:
     result = await employer_rating(db, company.id)
     return EmployerRatingPublic.model_validate(result)
+
+
+@router.get("/{company_id}/badges", response_model=list[BadgePublic])
+async def get_badges(company: VisibleCompany, db: DbSession) -> list[CompanyBadge]:
+    rows = await db.scalars(
+        select(CompanyBadge).where(
+            CompanyBadge.company_id == company.id,
+            CompanyBadge.revoked_at.is_(None),
+        )
+    )
+    return list(rows.all())

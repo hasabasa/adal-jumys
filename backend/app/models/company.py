@@ -20,6 +20,7 @@ PROOF_METHODS = ("domain_email", "official_letter", "other")
 BADGES = (
     "salary_not_confirmed",
     "repeated_language_discrimination",
+    "repeated_illegal_fines",
     "officially_confirmed_violation",
 )
 

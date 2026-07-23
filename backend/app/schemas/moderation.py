@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class HideRequest(BaseModel):
@@ -31,3 +31,26 @@ class ModerationActionPublic(BaseModel):
     target_id: uuid.UUID
     reason: str
     created_at: datetime
+
+
+class AppealCreate(BaseModel):
+    body: str = Field(min_length=10, max_length=2000)
+
+
+class AppealPublic(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    action_id: uuid.UUID
+    status: str
+    body: str
+    created_at: datetime
+
+
+class OverturnStat(BaseModel):
+    """Модератор-жауапкершілік метрикасы: шешімі жиі бұзылатын модератор
+    рөлінен айырылады (жария көрсеткіш)."""
+
+    moderator_pseudonym: str
+    total_actions: int
+    overturned: int

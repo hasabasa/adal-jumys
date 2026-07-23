@@ -48,6 +48,16 @@ class RepresentativeQueueItem(BaseModel):
     created_at: datetime
 
 
+class BadgePublic(BaseModel):
+    """Паттерн-бейдж: методологиясы docs/rating.md-де ашық."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    badge: str
+    note: str | None
+    awarded_at: datetime
+
+
 class EmployerRatingPublic(BaseModel):
     """Жұмыс беруші осі. rating=None: отзыв әлі жоқ.
 

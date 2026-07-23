@@ -16,6 +16,7 @@ class ReviewCreate(BaseModel):
     score_contract: int | None = Field(default=None, ge=1, le=10)
     # Минимум 50 таңба: факт-формат бір сөзді "жаман" деген бағадан қорғайды
     body: str = Field(min_length=50, max_length=10_000)
+    illegal_fines: bool = False
     employment_start: date | None = None
     employment_end: date | None = None
     discrimination: list[DiscriminationCreate] = Field(
@@ -45,6 +46,7 @@ class ReviewPublic(BaseModel):
     score_overtime: int | None
     score_contract: int | None
     body: str
+    illegal_fines: bool
     employment_start: date | None
     employment_end: date | None
     verification_status: str

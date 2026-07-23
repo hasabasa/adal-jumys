@@ -15,6 +15,7 @@ from app.schemas.discrimination import DiscriminationPublic
 from app.schemas.evidence import EvidencePublic
 from app.schemas.response import CompanyResponsePublic, ResponseCreate
 from app.schemas.review import ReviewCreate, ReviewPublic
+from app.services.badges import recompute_badges
 
 router = APIRouter(prefix="/companies/{company_id}/reviews", tags=["reviews"])
 
@@ -36,6 +37,7 @@ def to_public(
         score_overtime=review.score_overtime,
         score_contract=review.score_contract,
         body=review.body,
+        illegal_fines=review.illegal_fines,
         employment_start=review.employment_start,
         employment_end=review.employment_end,
         verification_status=review.verification_status,
@@ -81,6 +83,7 @@ async def create_review(
     await db.flush()
     details = [DiscriminationDetail(review_id=review.id, **block) for block in blocks]
     db.add_all(details)
+    await recompute_badges(db, company.id)
     await db.commit()
     await db.refresh(review)
     for detail in details:

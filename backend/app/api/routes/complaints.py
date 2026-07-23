@@ -21,6 +21,7 @@ from app.schemas.complaint import ComplaintCreate, ComplaintPublic, ComplaintSta
 from app.schemas.discrimination import DiscriminationPublic
 from app.schemas.evidence import EvidencePublic
 from app.schemas.response import CompanyResponsePublic, ResponseCreate
+from app.services.badges import recompute_badges
 
 router = APIRouter(prefix="/companies/{company_id}/complaints", tags=["complaints"])
 
@@ -83,6 +84,7 @@ async def create_complaint(
         DiscriminationDetail(complaint_id=complaint.id, **block) for block in blocks
     ]
     db.add_all(details)
+    await recompute_badges(db, company.id)
     await db.commit()
     await db.refresh(complaint)
     for detail in details:

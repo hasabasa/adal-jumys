@@ -17,6 +17,8 @@ MODERATION_ACTIONS = (
     "award_badge",
     "revoke_badge",
     "ban_user",
+    "appeal_uphold",
+    "appeal_overturn",
     "other",
 )
 TARGET_TYPES = (

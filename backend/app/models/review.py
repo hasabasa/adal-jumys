@@ -10,6 +10,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -39,6 +40,9 @@ class Review(ModerationHideMixin, TimestampMixin, Base):
     score_overtime: Mapped[int | None] = mapped_column(SmallInteger)
     score_contract: Mapped[int | None] = mapped_column(SmallInteger)
     body: Mapped[str] = mapped_column(Text)
+    # ҚР ЕК бойынша жұмыс беруші қызметкерге айыппұл сала алмайды - бұл өріс
+    # сол заңсыз тәжірибені құрылымды түрде тіркейді (бейдж-детекцияға негіз)
+    illegal_fines: Mapped[bool] = mapped_column(server_default=text("false"))
     employment_start: Mapped[date | None] = mapped_column(Date)
     employment_end: Mapped[date | None] = mapped_column(Date)
     verification_status: Mapped[str] = mapped_column(Text, server_default="unverified")

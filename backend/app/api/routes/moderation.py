@@ -3,13 +3,14 @@ from datetime import datetime, timezone
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from fastapi.responses import Response
 
-from app.api.deps import CurrentModerator, DbSession
+from app.api.deps import CurrentModerator, CurrentUser, DbSession
 from app.api.routes.evidence import serve_file
 from app.models import (
+    Appeal,
     Company,
     CompanyRepresentative,
     EvidenceFile,
@@ -22,11 +23,15 @@ from app.models import (
 from app.schemas.company import RepresentativeQueueItem
 from app.schemas.evidence import EvidenceDecision, EvidenceModeratorItem
 from app.schemas.moderation import (
+    AppealCreate,
+    AppealPublic,
     HideRequest,
     ModerationActionPublic,
+    OverturnStat,
     VerificationDecision,
     VerificationQueueItem,
 )
+from app.services.badges import recompute_badges
 from app.services.storage import get_storage
 
 router = APIRouter(prefix="/moderation", tags=["moderation"])
@@ -118,6 +123,7 @@ async def hide_content(
     obj.hidden_by_id = moderator.id
     obj.hidden_reason = data.reason
     entry = _log_action(db, moderator, "hide", target_type, target_id, data.reason)
+    await recompute_badges(db, obj.company_id)
     await db.commit()
     await db.refresh(entry)
     return _to_public(entry, moderator.pseudonym)
@@ -141,6 +147,7 @@ async def unhide_content(
     obj.hidden_by_id = None
     obj.hidden_reason = None
     entry = _log_action(db, moderator, "unhide", target_type, target_id, data.reason)
+    await recompute_badges(db, obj.company_id)
     await db.commit()
     await db.refresh(entry)
     return _to_public(entry, moderator.pseudonym)
@@ -368,6 +375,125 @@ async def decide_verification(
     await db.commit()
     await db.refresh(entry)
     return _to_public(entry, moderator.pseudonym)
+
+
+@router.post(
+    "/actions/{action_id}/appeal",
+    response_model=AppealPublic,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_appeal(
+    action_id: uuid.UUID, data: AppealCreate, db: DbSession, user: CurrentUser
+) -> Appeal:
+    action = await db.get(ModerationAction, action_id)
+    if action is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Әрекет табылмады"
+        )
+    existing = await db.scalar(
+        select(Appeal).where(
+            Appeal.action_id == action_id,
+            Appeal.appellant_id == user.id,
+            Appeal.status == "open",
+        )
+    )
+    if existing is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Бұл әрекетке ашық апелляцияңыз бар",
+        )
+    appeal = Appeal(action_id=action_id, appellant_id=user.id, body=data.body)
+    db.add(appeal)
+    await db.commit()
+    await db.refresh(appeal)
+    return appeal
+
+
+@router.get("/appeals", response_model=list[AppealPublic])
+async def appeal_queue(
+    db: DbSession,
+    moderator: CurrentModerator,
+    status_filter: str = Query(default="open", alias="status"),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+) -> list[Appeal]:
+    rows = await db.scalars(
+        select(Appeal)
+        .where(Appeal.status == status_filter)
+        .order_by(Appeal.created_at)
+        .limit(limit)
+        .offset(offset)
+    )
+    return list(rows.all())
+
+
+@router.post(
+    "/appeals/{appeal_id}/{decision}", response_model=ModerationActionPublic
+)
+async def resolve_appeal(
+    appeal_id: uuid.UUID,
+    decision: Literal["uphold", "overturn"],
+    data: HideRequest,
+    db: DbSession,
+    moderator: CurrentModerator,
+) -> ModerationActionPublic:
+    appeal = await db.get(Appeal, appeal_id)
+    if appeal is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Апелляция табылмады"
+        )
+    if appeal.status != "open":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Апелляция қаралып қойған (статусы: {appeal.status})",
+        )
+    action = await db.get(ModerationAction, appeal.action_id)
+    # Екі адам қағидасы: өз шешіміне апелляцияны өзі қарай алмайды
+    if action is not None and action.actor_id == moderator.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Өз әрекетіңізге апелляцияны өзіңіз қарай алмайсыз",
+        )
+    appeal.status = "upheld" if decision == "uphold" else "overturned"
+    appeal.resolved_by_id = moderator.id
+    appeal.resolved_at = datetime.now(timezone.utc)
+    entry = _log_action(
+        db,
+        moderator,
+        "appeal_uphold" if decision == "uphold" else "appeal_overturn",
+        action.target_type if action else "other",
+        action.target_id if action else appeal_id,
+        data.reason,
+    )
+    await db.commit()
+    await db.refresh(entry)
+    return _to_public(entry, moderator.pseudonym)
+
+
+@router.get("/overturn-stats", response_model=list[OverturnStat])
+async def overturn_stats(db: DbSession) -> list[OverturnStat]:
+    """Жария метрика: әр модератордың әрекет саны мен бұзылған шешім саны."""
+    actions = await db.execute(
+        select(User.pseudonym, func.count(ModerationAction.id))
+        .join(User, ModerationAction.actor_id == User.id)
+        .group_by(User.pseudonym)
+    )
+    overturned = await db.execute(
+        select(User.pseudonym, func.count(Appeal.id))
+        .join(ModerationAction, Appeal.action_id == ModerationAction.id)
+        .join(User, ModerationAction.actor_id == User.id)
+        .where(Appeal.status == "overturned")
+        .group_by(User.pseudonym)
+    )
+    overturned_map = dict(overturned.all())
+    return [
+        OverturnStat(
+            moderator_pseudonym=pseudonym,
+            total_actions=total,
+            overturned=overturned_map.get(pseudonym, 0),
+        )
+        for pseudonym, total in actions.all()
+    ]
 
 
 @router.get("/log", response_model=list[ModerationActionPublic])
