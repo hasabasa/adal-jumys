@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
@@ -20,6 +21,31 @@ class CompanyCreate(BaseModel):
         if not is_valid_bin(v):
             raise ValueError("БСН жарамсыз (чексум сәйкес емес)")
         return v
+
+
+class RepresentativeRequest(BaseModel):
+    proof_method: Literal["domain_email", "official_letter", "other"]
+
+
+class RepresentativePublic(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    company_id: uuid.UUID
+    status: str
+    proof_method: str | None
+    created_at: datetime
+
+
+class RepresentativeQueueItem(BaseModel):
+    """Модератор кезегіне: кім, қай компанияға, қалай растамақ."""
+
+    id: uuid.UUID
+    company_name: str
+    user_pseudonym: str
+    proof_method: str | None
+    status: str
+    created_at: datetime
 
 
 class EmployerRatingPublic(BaseModel):

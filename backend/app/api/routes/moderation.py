@@ -6,7 +6,15 @@ from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import select
 
 from app.api.deps import CurrentModerator, DbSession
-from app.models import ModerationAction, Review, User, VacancyComplaint
+from app.models import (
+    Company,
+    CompanyRepresentative,
+    ModerationAction,
+    Review,
+    User,
+    VacancyComplaint,
+)
+from app.schemas.company import RepresentativeQueueItem
 from app.schemas.moderation import HideRequest, ModerationActionPublic
 
 router = APIRouter(prefix="/moderation", tags=["moderation"])
@@ -121,6 +129,68 @@ async def unhide_content(
     obj.hidden_by_id = None
     obj.hidden_reason = None
     entry = _log_action(db, moderator, "unhide", target_type, target_id, data.reason)
+    await db.commit()
+    await db.refresh(entry)
+    return _to_public(entry, moderator.pseudonym)
+
+
+@router.get("/representatives", response_model=list[RepresentativeQueueItem])
+async def representative_queue(
+    db: DbSession,
+    moderator: CurrentModerator,
+    status_filter: str = Query(default="pending", alias="status"),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+) -> list[RepresentativeQueueItem]:
+    rows = await db.execute(
+        select(CompanyRepresentative, Company.name, User.pseudonym)
+        .join(Company, CompanyRepresentative.company_id == Company.id)
+        .join(User, CompanyRepresentative.user_id == User.id)
+        .where(CompanyRepresentative.status == status_filter)
+        .order_by(CompanyRepresentative.created_at)
+        .limit(limit)
+        .offset(offset)
+    )
+    return [
+        RepresentativeQueueItem(
+            id=rep.id,
+            company_name=company_name,
+            user_pseudonym=pseudonym,
+            proof_method=rep.proof_method,
+            status=rep.status,
+            created_at=rep.created_at,
+        )
+        for rep, company_name, pseudonym in rows.all()
+    ]
+
+
+@router.post(
+    "/representatives/{representative_id}/{decision}",
+    response_model=ModerationActionPublic,
+)
+async def decide_representation(
+    representative_id: uuid.UUID,
+    decision: Literal["approve", "reject"],
+    data: HideRequest,
+    db: DbSession,
+    moderator: CurrentModerator,
+) -> ModerationActionPublic:
+    rep = await db.get(CompanyRepresentative, representative_id)
+    if rep is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Өтінім табылмады"
+        )
+    if rep.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Өтінім қаралып қойған (статусы: {rep.status})",
+        )
+    rep.status = "approved" if decision == "approve" else "rejected"
+    rep.reviewed_by_id = moderator.id
+    rep.reviewed_at = datetime.now(timezone.utc)
+    entry = _log_action(
+        db, moderator, decision, "representative", representative_id, data.reason
+    )
     await db.commit()
     await db.refresh(entry)
     return _to_public(entry, moderator.pseudonym)

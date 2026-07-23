@@ -3,6 +3,8 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.schemas.response import CompanyResponsePublic
+
 
 class ReviewCreate(BaseModel):
     overall_score: int = Field(ge=1, le=10)
@@ -42,3 +44,4 @@ class ReviewPublic(BaseModel):
     employment_end: date | None
     verification_status: str
     created_at: datetime
+    company_response: CompanyResponsePublic | None = None

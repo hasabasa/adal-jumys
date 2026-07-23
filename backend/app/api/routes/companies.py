@@ -2,8 +2,14 @@ from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import or_, select
 
 from app.api.deps import CurrentUser, DbSession, VisibleCompany
-from app.models import Company
-from app.schemas.company import CompanyCreate, CompanyPublic, EmployerRatingPublic
+from app.models import Company, CompanyRepresentative
+from app.schemas.company import (
+    CompanyCreate,
+    CompanyPublic,
+    EmployerRatingPublic,
+    RepresentativePublic,
+    RepresentativeRequest,
+)
 from app.services.rating import employer_rating
 
 router = APIRouter(prefix="/companies", tags=["companies"])
@@ -56,6 +62,42 @@ async def list_companies(
 @router.get("/{company_id}", response_model=CompanyPublic)
 async def get_company(company: VisibleCompany) -> Company:
     return company
+
+
+@router.post(
+    "/{company_id}/representatives",
+    response_model=RepresentativePublic,
+    status_code=status.HTTP_201_CREATED,
+)
+async def request_representation(
+    company: VisibleCompany,
+    data: RepresentativeRequest,
+    db: DbSession,
+    user: CurrentUser,
+) -> CompanyRepresentative:
+    if user.role != "company":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Өкілдікті тек компания-аккаунт сұрай алады",
+        )
+    existing = await db.scalar(
+        select(CompanyRepresentative).where(
+            CompanyRepresentative.company_id == company.id,
+            CompanyRepresentative.user_id == user.id,
+        )
+    )
+    if existing is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Өтініміңіз бар (статусы: {existing.status})",
+        )
+    representative = CompanyRepresentative(
+        company_id=company.id, user_id=user.id, proof_method=data.proof_method
+    )
+    db.add(representative)
+    await db.commit()
+    await db.refresh(representative)
+    return representative
 
 
 @router.get("/{company_id}/rating", response_model=EmployerRatingPublic)

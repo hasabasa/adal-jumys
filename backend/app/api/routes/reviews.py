@@ -1,14 +1,24 @@
-from fastapi import APIRouter, HTTPException, Query, status
-from sqlalchemy import select
+import uuid
 
-from app.api.deps import CurrentUser, DbSession, VisibleCompany
-from app.models import Review, User
+from fastapi import APIRouter, HTTPException, Query, status
+from sqlalchemy import and_, select
+
+from app.api.deps import (
+    CurrentUser,
+    DbSession,
+    VisibleCompany,
+    require_approved_representative,
+)
+from app.models import CompanyResponse, Review, User
+from app.schemas.response import CompanyResponsePublic, ResponseCreate
 from app.schemas.review import ReviewCreate, ReviewPublic
 
 router = APIRouter(prefix="/companies/{company_id}/reviews", tags=["reviews"])
 
 
-def to_public(review: Review, pseudonym: str) -> ReviewPublic:
+def to_public(
+    review: Review, pseudonym: str, response: CompanyResponse | None = None
+) -> ReviewPublic:
     return ReviewPublic(
         id=review.id,
         company_id=review.company_id,
@@ -23,6 +33,9 @@ def to_public(review: Review, pseudonym: str) -> ReviewPublic:
         employment_end=review.employment_end,
         verification_status=review.verification_status,
         created_at=review.created_at,
+        company_response=(
+            CompanyResponsePublic.model_validate(response) if response else None
+        ),
     )
 
 
@@ -65,8 +78,15 @@ async def list_reviews(
     offset: int = Query(default=0, ge=0),
 ) -> list[ReviewPublic]:
     rows = await db.execute(
-        select(Review, User.pseudonym)
+        select(Review, User.pseudonym, CompanyResponse)
         .join(User, Review.author_id == User.id)
+        .outerjoin(
+            CompanyResponse,
+            and_(
+                CompanyResponse.review_id == Review.id,
+                CompanyResponse.moderation_status == "published",
+            ),
+        )
         .where(
             Review.company_id == company.id,
             Review.moderation_status == "published",
@@ -77,4 +97,46 @@ async def list_reviews(
         .limit(limit)
         .offset(offset)
     )
-    return [to_public(review, pseudonym) for review, pseudonym in rows.all()]
+    return [
+        to_public(review, pseudonym, response)
+        for review, pseudonym, response in rows.all()
+    ]
+
+
+@router.post(
+    "/{review_id}/response",
+    response_model=CompanyResponsePublic,
+    status_code=status.HTTP_201_CREATED,
+)
+async def respond_to_review(
+    company: VisibleCompany,
+    review_id: uuid.UUID,
+    data: ResponseCreate,
+    db: DbSession,
+    user: CurrentUser,
+) -> CompanyResponse:
+    await require_approved_representative(db, company.id, user)
+    review = await db.get(Review, review_id)
+    if review is None or review.company_id != company.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Отзыв табылмады"
+        )
+    existing = await db.scalar(
+        select(CompanyResponse).where(CompanyResponse.review_id == review_id)
+    )
+    if existing is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Бұл отзывқа жауап берілген",
+        )
+    response = CompanyResponse(
+        company_id=company.id,
+        author_id=user.id,
+        review_id=review_id,
+        body=data.body,
+        moderation_status="published",
+    )
+    db.add(response)
+    await db.commit()
+    await db.refresh(response)
+    return response

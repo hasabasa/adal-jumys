@@ -5,9 +5,11 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from sqlalchemy import select
+
 from app.core.security import decode_access_token
 from app.db.session import get_db
-from app.models import Company, User
+from app.models import Company, CompanyRepresentative, User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -57,3 +59,21 @@ async def get_visible_company(company_id: uuid.UUID, db: DbSession) -> Company:
 
 
 VisibleCompany = Annotated[Company, Depends(get_visible_company)]
+
+
+async def require_approved_representative(
+    db: AsyncSession, company_id: uuid.UUID, user: User
+) -> None:
+    """Ресми жауап - тек модератор растаған компания-өкілден."""
+    approved = await db.scalar(
+        select(CompanyRepresentative.id).where(
+            CompanyRepresentative.company_id == company_id,
+            CompanyRepresentative.user_id == user.id,
+            CompanyRepresentative.status == "approved",
+        )
+    )
+    if approved is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Жауапты тек компанияның расталған өкілі бере алады",
+        )

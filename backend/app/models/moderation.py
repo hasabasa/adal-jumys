@@ -19,7 +19,16 @@ MODERATION_ACTIONS = (
     "ban_user",
     "other",
 )
-TARGET_TYPES = ("review", "complaint", "evidence", "response", "company", "user", "badge")
+TARGET_TYPES = (
+    "review",
+    "complaint",
+    "evidence",
+    "response",
+    "company",
+    "user",
+    "badge",
+    "representative",
+)
 APPEAL_STATUSES = ("open", "upheld", "overturned")
 
 

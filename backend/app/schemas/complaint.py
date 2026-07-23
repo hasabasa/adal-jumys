@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
+from app.schemas.response import CompanyResponsePublic
+
 Category = Literal[
     "salary_fraud",
     "fake_vacancy",
@@ -52,6 +54,7 @@ class ComplaintPublic(BaseModel):
     actual_salary: int | None
     body: str
     created_at: datetime
+    company_response: CompanyResponsePublic | None = None
 
     @computed_field
     def salary_diff_percent(self) -> int | None:
