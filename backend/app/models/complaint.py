@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, Text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, SmallInteger, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, ModerationHideMixin, TimestampMixin, sql_in, uuid_pk
@@ -62,6 +62,9 @@ class VacancyComplaint(ModerationHideMixin, TimestampMixin, Base):
     advertised_salary: Mapped[int | None] = mapped_column(Integer)
     actual_salary: Mapped[int | None] = mapped_column(Integer)
     body: Mapped[str] = mapped_column(Text)
+    # Glassdoor Interviews үлгісі: оффер нәтижесі мен қиындық-бағасы
+    got_offer: Mapped[bool | None] = mapped_column()
+    difficulty: Mapped[int | None] = mapped_column(SmallInteger)
     moderation_status: Mapped[str] = mapped_column(Text, server_default="pending")
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
@@ -72,6 +75,10 @@ class VacancyComplaint(ModerationHideMixin, TimestampMixin, Base):
         CheckConstraint(
             sql_in("moderation_status", MODERATION_STATUSES),
             name="moderation_status_valid",
+        ),
+        CheckConstraint(
+            "difficulty IS NULL OR difficulty BETWEEN 1 AND 5",
+            name="difficulty_range",
         ),
         CheckConstraint(
             "advertised_salary IS NULL OR advertised_salary >= 0",

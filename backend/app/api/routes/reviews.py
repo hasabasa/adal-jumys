@@ -48,6 +48,8 @@ def to_public(
         score_overtime=review.score_overtime,
         score_contract=review.score_contract,
         body=review.body,
+        pros=review.pros,
+        cons=review.cons,
         problems=problems or [],
         employment_start=review.employment_start,
         employment_end=review.employment_end,

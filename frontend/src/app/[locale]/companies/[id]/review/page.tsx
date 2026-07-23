@@ -43,6 +43,8 @@ export default function ReviewFormPage({
   const [score, setScore] = useState(5);
   const [body, setBody] = useState("");
   const [problems, setProblems] = useState<string[]>([]);
+  const [pros, setPros] = useState("");
+  const [cons, setCons] = useState("");
   const [discrimination, setDiscrimination] = useState(EMPTY_DISCRIMINATION);
   const [files, setFiles] = useState<File[]>([]);
   const [verificationFiles, setVerificationFiles] = useState<File[]>([]);
@@ -59,6 +61,8 @@ export default function ReviewFormPage({
         {
           overall_score: score,
           body,
+          pros: pros || null,
+          cons: cons || null,
           problems,
           discrimination: toApiBlocks(discrimination),
         },
@@ -118,6 +122,25 @@ export default function ReviewFormPage({
           className="rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
         <p className="text-xs text-muted-foreground">{t("anonHint")}</p>
+
+        <div className="grid gap-2 sm:grid-cols-2">
+          <textarea
+            value={pros}
+            onChange={(event) => setPros(event.target.value)}
+            maxLength={3000}
+            rows={3}
+            placeholder={t("prosPlaceholder")}
+            className="rounded-lg border border-success/40 bg-card px-3 py-2 text-sm outline-none focus-visible:border-success focus-visible:ring-3 focus-visible:ring-success/30"
+          />
+          <textarea
+            value={cons}
+            onChange={(event) => setCons(event.target.value)}
+            maxLength={3000}
+            rows={3}
+            placeholder={t("consPlaceholder")}
+            className="rounded-lg border border-destructive/40 bg-card px-3 py-2 text-sm outline-none focus-visible:border-destructive focus-visible:ring-3 focus-visible:ring-destructive/30"
+          />
+        </div>
 
         <fieldset className="rounded-lg border border-border p-3">
           <legend className="px-1 text-sm font-medium">

@@ -40,6 +40,9 @@ async def store_upload(
         s3_key=key,
         mime_type=file.content_type,
         size_bytes=len(data),
+        # Автор шешімі (24.07.2026): пре-модерация ЖОҚ - бірден жария,
+        # шағым түскенде ғана тексеріліп жасырылады (реактив-модель)
+        status="visible" if purpose == "public_evidence" else "pending_moderation",
     )
     await get_storage().save(key, data, file.content_type)
     db.add(evidence)

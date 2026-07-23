@@ -17,6 +17,8 @@ class ReviewCreate(BaseModel):
     score_contract: int | None = Field(default=None, ge=1, le=10)
     # Минимум 50 таңба: факт-формат бір сөзді "жаман" деген бағадан қорғайды
     body: str = Field(min_length=50, max_length=10_000)
+    pros: str | None = Field(default=None, max_length=3000)
+    cons: str | None = Field(default=None, max_length=3000)
     # docs/categories.md чеклисті (ЕК-баптарына байланған 13 категория)
     problems: list[str] = Field(default_factory=list, max_length=13)
     employment_start: date | None = None
@@ -56,6 +58,8 @@ class ReviewPublic(BaseModel):
     score_overtime: int | None
     score_contract: int | None
     body: str
+    pros: str | None
+    cons: str | None
     problems: list[str] = []
     employment_start: date | None
     employment_end: date | None

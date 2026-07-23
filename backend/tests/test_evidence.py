@@ -63,45 +63,34 @@ def test_oversized_file_rejected(client, register, auth_header, promote):
     assert response.status_code == 413
 
 
-def test_moderation_gate(client, register, auth_header, promote):
-    """Дәлел модерацияға дейін жарияда КӨРІНБЕЙДІ, approve-тан кейін көрінеді."""
+def test_reactive_moderation(client, register, auth_header, promote):
+    """Реактив-модель: файл БІРДЕН жария, шағым түскенде модератор жасырады."""
     ctx = _setup(client, register, auth_header, promote)
     evidence_id = _upload(client, ctx, ctx["worker"]).json()["id"]
 
-    listed = client.get(f"/companies/{ctx['company_id']}/reviews").json()
-    assert listed[0]["evidence"] == []
-    assert client.get(f"/evidence/{evidence_id}").status_code == 404
-
-    queue = client.get("/moderation/evidence", headers=ctx["moderator"]).json()
-    assert len(queue) == 1
-
-    preview = client.get(
-        f"/moderation/evidence/{evidence_id}/file", headers=ctx["moderator"]
-    )
-    assert preview.status_code == 200
-
-    approve = client.post(
-        f"/moderation/evidence/{evidence_id}/approve",
-        json={"reason": "Skrin zharamdy, PII zhoq", "pii_masked": False},
-        headers=ctx["moderator"],
-    )
-    assert approve.status_code == 200
-
+    # Бірден көрінеді
     listed = client.get(f"/companies/{ctx['company_id']}/reviews").json()
     assert listed[0]["evidence"][0]["id"] == evidence_id
     served = client.get(f"/evidence/{evidence_id}")
     assert served.status_code == 200
     assert served.content == PNG_BYTES
 
-
-def test_reject_keeps_file_hidden(client, register, auth_header, promote):
-    ctx = _setup(client, register, auth_header, promote)
-    evidence_id = _upload(client, ctx, ctx["worker"]).json()["id"]
+    # Шағым түсті делік: модератор көрініп тұрғанды жасырады
     reject = client.post(
         f"/moderation/evidence/{evidence_id}/reject",
-        json={"reason": "PII ashyq korinip tur, maskasyz zhariyalanbaidy"},
+        json={"reason": "PII ashyq korinip tur, shagym boyynsha zhasyryldy"},
         headers=ctx["moderator"],
     )
     assert reject.status_code == 200
     assert client.get(f"/evidence/{evidence_id}").status_code == 404
+
+
+def test_hidden_evidence_leaves_listing(client, register, auth_header, promote):
+    ctx = _setup(client, register, auth_header, promote)
+    evidence_id = _upload(client, ctx, ctx["worker"]).json()["id"]
+    client.post(
+        f"/moderation/evidence/{evidence_id}/reject",
+        json={"reason": "PII ashyq korinip tur, maskasyz zhariyalanbaidy"},
+        headers=ctx["moderator"],
+    )
     assert client.get(f"/companies/{ctx['company_id']}/reviews").json()[0]["evidence"] == []

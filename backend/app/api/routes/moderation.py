@@ -287,7 +287,7 @@ async def decide_evidence(
             status_code=status.HTTP_409_CONFLICT,
             detail="Верификация-файл бұл жерде қаралмайды (верификация ағыны бар)",
         )
-    if evidence.status != "pending_moderation":
+    if evidence.status not in ("pending_moderation", "visible"):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Дәлел қаралып қойған (статусы: {evidence.status})",

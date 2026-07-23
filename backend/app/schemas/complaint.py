@@ -30,6 +30,8 @@ class ComplaintCreate(BaseModel):
     advertised_salary: int | None = Field(default=None, ge=0)
     actual_salary: int | None = Field(default=None, ge=0)
     body: str = Field(min_length=50, max_length=10_000)
+    got_offer: bool | None = None
+    difficulty: int | None = Field(default=None, ge=1, le=5)
     discrimination: list[DiscriminationCreate] = Field(
         default_factory=list, max_length=5
     )
@@ -66,6 +68,8 @@ class ComplaintPublic(BaseModel):
     advertised_salary: int | None
     actual_salary: int | None
     body: str
+    got_offer: bool | None
+    difficulty: int | None
     created_at: datetime
     company_response: CompanyResponsePublic | None = None
     helpful_count: int = 0

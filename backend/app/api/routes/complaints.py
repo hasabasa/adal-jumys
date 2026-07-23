@@ -53,6 +53,8 @@ def to_public(
         advertised_salary=complaint.advertised_salary,
         actual_salary=complaint.actual_salary,
         body=complaint.body,
+        got_offer=complaint.got_offer,
+        difficulty=complaint.difficulty,
         created_at=complaint.created_at,
         company_response=(
             CompanyResponsePublic.model_validate(response) if response else None

@@ -44,6 +44,8 @@ export default function ComplaintFormPage({
   const [advertised, setAdvertised] = useState("");
   const [actual, setActual] = useState("");
   const [body, setBody] = useState("");
+  const [gotOffer, setGotOffer] = useState<string>("");
+  const [difficulty, setDifficulty] = useState<string>("");
   const [discrimination, setDiscrimination] = useState(EMPTY_DISCRIMINATION);
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +73,8 @@ export default function ComplaintFormPage({
           advertised_salary: isSalaryFraud ? Number(advertised) : null,
           actual_salary: isSalaryFraud ? Number(actual) : null,
           body,
+          got_offer: gotOffer === "" ? null : gotOffer === "yes",
+          difficulty: difficulty === "" ? null : Number(difficulty),
           discrimination: toApiBlocks(discrimination, isDiscrimination),
         },
         getToken(),
@@ -179,6 +183,36 @@ export default function ComplaintFormPage({
           placeholder={t("bodyPlaceholder")}
           className="rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
+
+        <div className="grid grid-cols-2 gap-2">
+          <label className="grid gap-1 text-sm font-medium">
+            {t("offerLabel")}
+            <select
+              value={gotOffer}
+              onChange={(event) => setGotOffer(event.target.value)}
+              className={selectClass}
+            >
+              <option value="">{t("notSpecified")}</option>
+              <option value="yes">{t("offerYes")}</option>
+              <option value="no">{t("offerNo")}</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm font-medium">
+            {t("difficultyLabel")}
+            <select
+              value={difficulty}
+              onChange={(event) => setDifficulty(event.target.value)}
+              className={selectClass}
+            >
+              <option value="">{t("notSpecified")}</option>
+              {[1, 2, 3, 4, 5].map((value) => (
+                <option key={value} value={value}>
+                  {value}/5
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
         <DiscriminationField
           value={discrimination}

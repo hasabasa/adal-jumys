@@ -338,6 +338,26 @@ export default async function CompanyPage({
                   ))}
                 </div>
                 <p className="mt-2 text-sm">{review.body}</p>
+                {(review.pros || review.cons) && (
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    {review.pros && (
+                      <div className="rounded-lg border border-success/30 bg-success/5 p-2.5 text-sm">
+                        <p className="text-xs font-semibold text-success">
+                          {t("prosTitle")}
+                        </p>
+                        <p className="mt-0.5">{review.pros}</p>
+                      </div>
+                    )}
+                    {review.cons && (
+                      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-2.5 text-sm">
+                        <p className="text-xs font-semibold text-destructive">
+                          {t("consTitle")}
+                        </p>
+                        <p className="mt-0.5">{review.cons}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <EvidenceLinks items={review.evidence} />
                 {review.company_response && (
                   <div className="mt-3 rounded-lg bg-secondary p-3">
@@ -394,6 +414,16 @@ export default async function CompanyPage({
                     {t(`stages.${complaint.stage}`)} ·{" "}
                     {complaint.source_type}
                   </span>
+                  {complaint.got_offer !== null && (
+                    <span className="rounded-md bg-secondary px-2 py-0.5">
+                      {complaint.got_offer ? t("offerYes") : t("offerNo")}
+                    </span>
+                  )}
+                  {complaint.difficulty !== null && (
+                    <span className="rounded-md bg-secondary px-2 py-0.5">
+                      {t("difficultyChip", { value: complaint.difficulty })}
+                    </span>
+                  )}
                 </div>
                 {complaint.salary_diff_percent !== null && (
                   <p className={cn("mt-2 text-sm font-semibold")}>
